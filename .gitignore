@@ -1,0 +1,71 @@
+# ── Python / Backend ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+.venv/
+venv/
+env/
+ENV/
+
+# Flask / SQLite
+backend/instance/
+backend/logs/
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment
+backend/.env
+.env
+
+# Migrations cache
+backend/migrations/versions/__pycache__/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Node / Frontend ───────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.env
+
+# Vite
+frontend/.vite/
+
+# ── IDE / Editor ──────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+*.tmp
+*~
+
+# ── Coverage / Testing ────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.nyc_output/
+
+# ── OS ────────────────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+
+# ── Screenshots (keep the folder, ignore actual images in CI) ─
+# screenshots/*.png
+# screenshots/*.jpg
+
+# ── ngrok ─────────────────────────────────────────────────────
+ngrok
+ngrok.exe
