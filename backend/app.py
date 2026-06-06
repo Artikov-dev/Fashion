@@ -117,7 +117,21 @@ def create_app(config_name='development'):
 
     @app.route('/health')
     def health():
-        return {'status': 'healthy'}, 200
+        """Health check endpoint for Docker/Kubernetes liveness probes"""
+        try:
+            db.session.execute('SELECT 1')
+            return {'status': 'healthy', 'database': 'connected'}, 200
+        except Exception as e:
+            return {'status': 'unhealthy', 'database': 'failed', 'error': str(e)}, 503
+
+    @app.route('/api/health')
+    def api_health():
+        """Health check for API (same as /health but under /api)"""
+        try:
+            db.session.execute('SELECT 1')
+            return {'status': 'healthy', 'database': 'connected'}, 200
+        except Exception as e:
+            return {'status': 'unhealthy', 'database': 'failed', 'error': str(e)}, 503
 
     @app.route('/api/test-auth')
     @jwt_required()
