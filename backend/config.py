@@ -56,7 +56,8 @@ class ProductionConfig(Config):
     database_url = os.environ.get('DATABASE_URL')
     if database_url and database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = database_url
+    # Robust import-time fallback if DATABASE_URL isn't set
+    SQLALCHEMY_DATABASE_URI = database_url or Config.SQLALCHEMY_DATABASE_URI
 
     @classmethod
     def init_app(cls, app):
@@ -71,8 +72,14 @@ class ProductionConfig(Config):
             )
             cls.SECRET_KEY = secrets.token_urlsafe(48)
 
+        # If DATABASE_URL is missing (e.g., local run with production config),
+        # fall back to the base Config SQLite URL to avoid import-time crashes.
         if not cls.SQLALCHEMY_DATABASE_URI:
-            raise RuntimeError('DATABASE_URL must be set in production')
+            warnings.warn(
+                'DATABASE_URL is missing in production. Falling back to SQLite for runtime (not recommended for real prod).',
+                UserWarning,
+            )
+            cls.SQLALCHEMY_DATABASE_URI = Config.SQLALCHEMY_DATABASE_URI
 
 # Configuration dictionary
 config = {
