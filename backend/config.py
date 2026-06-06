@@ -60,8 +60,17 @@ class ProductionConfig(Config):
 
     @classmethod
     def init_app(cls, app):
+        # Avoid hard-crashing on missing SECRET_KEY in production.
+        # JWT_SECRET_KEY is handled in the base Config with a secure fallback.
+        # SECRET_KEY is required by Flask for sessions/csrf signing.
         if not cls.SECRET_KEY:
-            raise RuntimeError('SECRET_KEY must be set in production')
+            warnings.warn(
+                'SECRET_KEY is missing in production. Generating a secure runtime key as a fallback. '
+                'Set SECRET_KEY explicitly for production to keep session/csrf signing stable across restarts.',
+                UserWarning,
+            )
+            cls.SECRET_KEY = secrets.token_urlsafe(48)
+
         if not cls.SQLALCHEMY_DATABASE_URI:
             raise RuntimeError('DATABASE_URL must be set in production')
 
