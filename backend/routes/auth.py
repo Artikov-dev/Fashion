@@ -86,7 +86,10 @@ def register():
             },
         }), 201
     except Exception as e:
+        # Ensure transaction is rolled back and stacktrace is visible in Gunicorn logs.
+        import traceback
         db.session.rollback()
+        traceback.print_exc()
         return jsonify({'success': False, 'message': 'Registration failed', 'error': str(e)}), 500
 
 
