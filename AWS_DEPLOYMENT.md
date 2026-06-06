@@ -1,51 +1,30 @@
-# AWS EC2 Deployment Guide
+# AWS EC2 Deployment Guide (PostgreSQL in Docker)
 
 ## Prerequisites
 - AWS Account
 - EC2 instance (Ubuntu 22.04 or later, t2.micro or larger)
-- RDS PostgreSQL instance (or use docker postgres in container)
+- Basic understanding of Docker
 
 ---
 
-## Step 1: Set Up AWS RDS PostgreSQL (Recommended)
-
-### Create RDS Instance
-1. Go to **AWS Console → RDS → Databases → Create Database**
-2. Choose **PostgreSQL** engine (version 15+)
-3. **DB instance identifier**: `fashion-db`
-4. **Master username**: `fashion_user`
-5. **Master password**: Set a strong password (save it!)
-6. **DB name**: `fashion_shop`
-7. **Publicly accessible**: NO (only EC2 accesses it)
-8. **VPC**: Same VPC as your EC2 instance
-9. Click **Create Database** (takes 5-10 minutes)
-
-### Get RDS Endpoint
-After RDS is created:
-1. Open the RDS instance details
-2. Copy the **Endpoint** (e.g., `fashion-db.c9akciq32.us-east-1.rds.amazonaws.com`)
-3. Note the port (default: 5432)
-
----
-
-## Step 2: Launch EC2 Instance
+## Step 1: Launch EC2 Instance
 
 1. Go to **AWS Console → EC2 → Instances → Launch Instances**
 2. **Name**: `fashion-ecommerce`
-3. **AMI**: Ubuntu Server 22.04 LTS
-4. **Instance type**: `t2.medium` (or larger for production)
-5. **Key pair**: Create/select your SSH key
-6. **Security group**: Create new or use existing
+3. **AMI**: Ubuntu Server 22.04 LTS (Free tier eligible)
+4. **Instance type**: `t2.micro` (free tier) or `t2.small` (recommended for production)
+5. **Key pair**: Create/select your SSH key (download .pem file)
+6. **Security group**: Create new security group
    - **Inbound rules**:
      - HTTP (80) from `0.0.0.0/0`
      - HTTPS (443) from `0.0.0.0/0` (optional, add SSL later)
-     - SSH (22) from YOUR_IP only
-7. **Storage**: 30 GB gp3 (general purpose)
+     - SSH (22) from YOUR_IP only (for security)
+7. **Storage**: 20 GB gp3 (sufficient for database + images)
 8. Click **Launch Instance**
 
 ---
 
-## Step 3: Connect to EC2 and Install Docker
+## Step 2: Connect to EC2 and Install Docker
 
 ### SSH into EC2
 ```bash
@@ -59,7 +38,11 @@ sudo apt-get update && sudo apt-get upgrade -y
 
 ### Install Docker & Docker Compose
 ```bash
-sudo apt-get install -y docker.io docker-compose
+sudo apt-get install -y docker.io docker-compose curl git
+```
+
+### Add user to docker group (run Docker without sudo)
+```bash
 sudo usermod -aG docker ubuntu
 newgrp docker
 ```
@@ -72,7 +55,7 @@ docker compose version
 
 ---
 
-## Step 4: Clone Repository & Configure
+## Step 3: Clone Repository & Configure
 
 ### Clone your project
 ```bash
@@ -80,84 +63,104 @@ git clone https://github.com/your-username/Fashion-Ecommerce-System.git
 cd Fashion-Ecommerce-System/Fashion-Ecommerce-System
 ```
 
-### Update `.env.production` with RDS credentials
+### Verify files
 ```bash
-nano .env.production
-```
-
-Update this line with your RDS endpoint and password:
-```
-DATABASE_URL=postgresql://fashion_user:YOUR_PASSWORD@your-rds-endpoint:5432/fashion_shop
-```
-
-Save: `Ctrl+X` → `Y` → `Enter`
-
----
-
-## Step 5: Build & Deploy Containers
-
-### Build images (optional - skipped if pulling from ECR)
-```bash
-sudo docker compose -f docker-compose.production.yml build
-```
-
-### Start services
-```bash
-sudo docker compose -f docker-compose.production.yml up -d
-```
-
-### Verify services are running
-```bash
-sudo docker compose -f docker-compose.production.yml ps
-```
-
-### Check logs
-```bash
-sudo docker compose -f docker-compose.production.yml logs -f backend
-sudo docker compose -f docker-compose.production.yml logs -f frontend
+ls -la docker-compose.production.yml
+cat .env.production
 ```
 
 ---
 
-## Step 6: Configure Security Groups
+## Step 4: Deploy with Docker Compose
 
-### RDS Security Group
-1. Go to **RDS → Databases → fashion-db → Security groups**
-2. Edit **Inbound rules**:
-   - Add rule: **Type**: PostgreSQL, **Source**: EC2 security group (or EC2 private IP + /32)
+### Start all services (frontend, backend, PostgreSQL)
+```bash
+docker compose -f docker-compose.production.yml up -d --build
+```
 
-### EC2 Security Group
-Already configured to allow HTTP/HTTPS/SSH
+**What happens:**
+- Builds backend Docker image (Flask + Gunicorn)
+- Builds frontend Docker image (Vite + Nginx)
+- Starts PostgreSQL container and initializes database
+- Services connect automatically
+
+### Check status
+```bash
+docker compose -f docker-compose.production.yml ps
+```
+
+**Expected output:**
+```
+NAME                   IMAGE               STATUS
+fashion-db             postgres:15-alpine  Up 2 minutes (healthy)
+fashion-backend        fashion-backend     Up 1 minute
+fashion-frontend       fashion-frontend    Up 30 seconds
+```
+
+### View logs
+```bash
+# All logs
+docker compose -f docker-compose.production.yml logs -f
+
+# Backend only
+docker compose -f docker-compose.production.yml logs -f backend
+
+# Database only
+docker compose -f docker-compose.production.yml logs -f db
+```
 
 ---
 
-## Step 7: Verify Deployment
+## Step 5: Verify Deployment
 
-### Test frontend
+### Test frontend (should show login page)
 ```bash
 curl http://your-ec2-public-ip
 ```
 
-### Test backend
+### Test backend API
 ```bash
 curl http://your-ec2-public-ip:8000/api/health
 ```
 
+Expected response:
+```json
+{"status": "healthy", "database": "connected"}
+```
+
 ### Access in browser
-- Frontend: `http://your-ec2-public-ip`
-- API: `http://your-ec2-public-ip:8000`
+- **Frontend**: http://your-ec2-public-ip
+- **Backend API**: http://your-ec2-public-ip:8000/swagger/ (API docs)
 
 ---
 
-## Step 8: (Optional) Set Up Auto-Restart & Logs
+## Step 6: Configure Security Groups (Allow External Traffic)
 
-### Enable Docker to start on boot
+### Update Security Group
+1. Go to **AWS Console → EC2 → Security Groups**
+2. Select your security group
+3. **Edit Inbound Rules**:
+   - HTTP (80) - Source: `0.0.0.0/0` ✅ (Already set)
+   - HTTPS (443) - Source: `0.0.0.0/0` (optional)
+   - SSH (22) - Source: YOUR_IP_ONLY (for security)
+
+### Test connectivity
 ```bash
-sudo systemctl enable docker
-sudo systemctl enable docker.service
+# From your local machine
+curl http://your-ec2-public-ip
 ```
 
-### Create systemd service (auto-restart containers)
+---
+
+## Step 7: Enable Auto-Restart on Reboot
+
+### Enable Docker service on boot
+```bash
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+### Create systemd service for auto-restart
 ```bash
 sudo tee /etc/systemd/system/docker-compose-fashion.service > /dev/null <<EOF
 [Unit]
@@ -176,14 +179,34 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
-
-sudo systemctl enable docker-compose-fashion
-sudo systemctl start docker-compose-fashion
 ```
 
-### View service status
+### Enable and start service
 ```bash
+sudo systemctl enable docker-compose-fashion
+sudo systemctl start docker-compose-fashion
 sudo systemctl status docker-compose-fashion
+```
+
+Now containers will auto-restart if they crash or if EC2 reboots.
+
+---
+
+## Step 8: Backup PostgreSQL Database
+
+### Create backup
+```bash
+docker compose -f docker-compose.production.yml exec db pg_dump -U fashion_user -d fashion_shop > backup.sql
+```
+
+### List backups
+```bash
+ls -lh backup.sql
+```
+
+### Restore from backup
+```bash
+docker compose -f docker-compose.production.yml exec -T db psql -U fashion_user -d fashion_shop < backup.sql
 ```
 
 ---
@@ -192,17 +215,28 @@ sudo systemctl status docker-compose-fashion
 
 ### View all container logs
 ```bash
-sudo docker compose -f docker-compose.production.yml logs -f
+docker compose -f docker-compose.production.yml logs -f
 ```
 
 ### Restart services
 ```bash
-sudo docker compose -f docker-compose.production.yml restart
+# Restart all
+docker compose -f docker-compose.production.yml restart
+
+# Restart specific service
+docker compose -f docker-compose.production.yml restart backend
+docker compose -f docker-compose.production.yml restart frontend
 ```
 
 ### Stop all services
 ```bash
-sudo docker compose -f docker-compose.production.yml down
+docker compose -f docker-compose.production.yml down
+```
+
+### Restart everything (fresh start)
+```bash
+docker compose -f docker-compose.production.yml down
+docker compose -f docker-compose.production.yml up -d --build
 ```
 
 ### Check disk usage
@@ -211,96 +245,169 @@ df -h
 docker system df
 ```
 
-### Database connection test
+### View database logs
 ```bash
-sudo docker compose -f docker-compose.production.yml exec backend psql -U fashion_user -h <RDS_ENDPOINT> -d fashion_shop -c "SELECT 1"
+docker compose -f docker-compose.production.yml logs db
+```
+
+### Connect to database directly
+```bash
+docker compose -f docker-compose.production.yml exec db psql -U fashion_user -d fashion_shop
 ```
 
 ---
 
-## Optional: Use AWS ECR for Images
+## Common Issues & Solutions
 
-### Create ECR repositories
+### Problem: Port 80 already in use
 ```bash
-aws ecr create-repository --repository-name fashion-backend --region us-east-1
-aws ecr create-repository --repository-name fashion-frontend --region us-east-1
+# Check what's using port 80
+sudo lsof -i :80
+
+# Stop nginx if running
+sudo systemctl stop nginx
+
+# Or use different port - edit docker-compose.production.yml:
+# ports: - "8080:80"  (then access at http://your-ip:8080)
 ```
 
-### Login to ECR
+### Problem: Backend can't connect to database
 ```bash
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
+# Check database is running
+docker compose -f docker-compose.production.yml ps db
+
+# View database logs
+docker compose -f docker-compose.production.yml logs db
+
+# Restart database
+docker compose -f docker-compose.production.yml restart db
 ```
 
-### Build & push images
+### Problem: Out of disk space
 ```bash
-docker build -t fashion-backend ./backend
-docker tag fashion-backend:latest YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/fashion-backend:latest
-docker push YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/fashion-backend:latest
+# Check disk usage
+df -h
 
-docker build -t fashion-frontend ./frontend
-docker tag fashion-frontend:latest YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/fashion-frontend:latest
-docker push YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/fashion-frontend:latest
+# Clean up Docker
+docker system prune -a
+
+# Or delete old containers/images
+docker container prune
+docker image prune
 ```
 
-### Update docker-compose.production.yml to use ECR
-```yaml
-services:
-  backend:
-    image: YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/fashion-backend:latest
-  frontend:
-    image: YOUR_ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/fashion-frontend:latest
+### Problem: Containers keep restarting
+```bash
+# Check backend logs for errors
+docker compose -f docker-compose.production.yml logs backend
+
+# Check frontend logs
+docker compose -f docker-compose.production.yml logs frontend
 ```
+
+### Problem: Can't access frontend at http://your-ip
+```bash
+# Check if frontend is running
+docker compose -f docker-compose.production.yml ps frontend
+
+# Check frontend logs
+docker compose -f docker-compose.production.yml logs frontend
+
+# Check if nginx is running inside container
+docker compose -f docker-compose.production.yml exec frontend ps aux | grep nginx
+```
+
+---
+
+## Optional: Set Up SSL/HTTPS with Let's Encrypt
+
+### Install Certbot
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+```
+
+### Get certificate
+```bash
+sudo certbot certonly --standalone -d your-domain.com
+```
+
+### Update nginx config to use SSL
+- Edit nginx configuration in frontend container
+- Or create nginx.conf before building the image
 
 ---
 
 ## Quick Reference Commands
 
 ```bash
-# SSH into EC2
-ssh -i your-key.pem ubuntu@your-ec2-ip
+# Deploy
+docker compose -f docker-compose.production.yml up -d --build
 
-# Start/stop containers
-docker compose -f docker-compose.production.yml up -d
-docker compose -f docker-compose.production.yml down
+# Check status
+docker compose -f docker-compose.production.yml ps
 
 # View logs
 docker compose -f docker-compose.production.yml logs -f
 
-# Restart specific service
-docker compose -f docker-compose.production.yml restart backend
-docker compose -f docker-compose.production.yml restart frontend
+# Restart services
+docker compose -f docker-compose.production.yml restart
 
-# Check running containers
-docker ps
+# Stop all services
+docker compose -f docker-compose.production.yml down
+
+# Connect to database
+docker compose -f docker-compose.production.yml exec db psql -U fashion_user -d fashion_shop
+
+# Backup database
+docker compose -f docker-compose.production.yml exec db pg_dump -U fashion_user -d fashion_shop > backup.sql
+
+# View specific service logs
+docker compose -f docker-compose.production.yml logs backend
+docker compose -f docker-compose.production.yml logs frontend
+docker compose -f docker-compose.production.yml logs db
 ```
 
 ---
 
-## Troubleshooting
+## Architecture Overview
 
-### Backend can't connect to RDS
-- Check RDS security group allows EC2 security group
-- Verify DATABASE_URL in .env.production
-- Test connection: `psql -U fashion_user -h <RDS_ENDPOINT> -d fashion_shop`
-
-### Port 80 already in use
-- Check: `sudo lsof -i :80`
-- Stop nginx/apache: `sudo systemctl stop nginx`
-
-### Out of disk space
-- Check: `df -h`
-- Clean Docker: `docker system prune -a`
-
-### Containers keep restarting
-- Check logs: `docker compose logs backend`
-- Check environment variables are set correctly
+```
+AWS EC2 Instance (Ubuntu 22.04)
+│
+├── Docker Container: PostgreSQL 15
+│   └── Volume: postgres_data_prod (persists database)
+│
+├── Docker Container: Backend (Flask)
+│   ├── Port: 8000
+│   └── Connects to: PostgreSQL
+│
+└── Docker Container: Frontend (Nginx)
+    ├── Port: 80
+    └── Proxies to: Backend
+```
 
 ---
 
 ## Next Steps
 
-- Set up CloudFront CDN for frontend
-- Configure Route 53 DNS
-- Set up SSL with ACM Certificate Manager
-- Enable CloudWatch monitoring
-- Configure backup strategy for RDS
+- ✅ **Done**: Deployed on AWS EC2 with PostgreSQL in Docker
+- 🔒 **Optional**: Set up SSL/HTTPS with Let's Encrypt
+- 📊 **Optional**: Set up CloudWatch monitoring
+- 🔄 **Optional**: Set up CI/CD pipeline (GitHub Actions)
+- 📦 **Optional**: Push images to ECR or Docker Hub
+
+---
+
+## Environment Variables
+
+Edit `.env.production` to customize:
+```bash
+FLASK_ENV=production          # Production mode
+FLASK_CONFIG=production       # Flask config
+SECRET_KEY=<your-secret>      # Keep this secret!
+JWT_SECRET_KEY=<your-jwt>     # Keep this secret!
+DATABASE_URL=<postgres-url>   # Auto-set by docker-compose
+PORT=8000                     # Backend port
+```
+
+**Never commit `.env.production` to GitHub!** (Add to `.gitignore`)

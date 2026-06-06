@@ -1,7 +1,24 @@
-# Production docker-compose for AWS EC2 with RDS
+# Production docker-compose for AWS EC2 with PostgreSQL in Docker
 # Usage: docker compose -f docker-compose.production.yml up -d
 
 services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: fashion_user
+      POSTGRES_PASSWORD: fashion_password_prod
+      POSTGRES_DB: fashion_shop
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fashion_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend:
     build: ./backend
     restart: always
@@ -10,9 +27,10 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_CONFIG=production
-      # DATABASE_URL is read from .env.production
-    env_file:
-      - .env.production
+      - DATABASE_URL=postgresql://fashion_user:fashion_password_prod@db:5432/fashion_shop
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health || exit 1"]
       interval: 30s
@@ -32,3 +50,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+volumes:
+  postgres_data_prod:
