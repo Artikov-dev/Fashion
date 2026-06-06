@@ -62,10 +62,14 @@ def register():
         return jsonify({'success': False, 'message': 'Email and password are required'}), 400
     if len(password) < 6:
         return jsonify({'success': False, 'message': 'Password must be at least 6 characters'}), 400
-    if User.query.filter_by(email=email).first():
-        return jsonify({'success': False, 'message': 'An account with this email already exists'}), 409
 
     try:
+        # Ensure any prior failed transaction state doesn't break this request
+        # (Postgres requires ROLLBACK after an error).
+        user_exists = User.query.filter_by(email=email).first()
+        if user_exists:
+            return jsonify({'success': False, 'message': 'An account with this email already exists'}), 409
+
         user = User(email=email, role='customer', name=name or None)
         user.set_password(password)
         db.session.add(user)
