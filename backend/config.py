@@ -18,14 +18,16 @@ class Config:
         database_url = f'sqlite:///{DEFAULT_SQLITE_PATH}'
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Ensure a sufficiently long JWT secret. In production, require an explicit secure key.
+    # Ensure a sufficiently long JWT secret.
+    # Production deployments should provide JWT_SECRET_KEY, but we also add a safe fallback
+    # to prevent the app from failing to boot due to misconfiguration.
     _raw_jwt_key = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
     if len(_raw_jwt_key) < 32:
-        # If running in production, do not allow weak keys
-        if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('ENV') == 'production':
-            raise RuntimeError('JWT_SECRET_KEY must be at least 32 bytes in production')
-        # For development/testing, auto-generate a secure runtime key and warn
-        warnings.warn('Provided JWT_SECRET_KEY is shorter than 32 bytes — generating a secure runtime key for local use', UserWarning)
+        warnings.warn(
+            'JWT_SECRET_KEY is missing or shorter than 32 bytes. Generating a secure runtime key as a fallback. '
+            'Set JWT_SECRET_KEY explicitly for production to keep tokens valid across restarts.',
+            UserWarning,
+        )
         _raw_jwt_key = secrets.token_urlsafe(48)
     JWT_SECRET_KEY = _raw_jwt_key
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
