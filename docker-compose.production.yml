@@ -28,6 +28,9 @@ services:
       - FLASK_ENV=production
       - FLASK_CONFIG=production
       - DATABASE_URL=postgresql://fashion_user:fashion_password_prod@db:5432/fashion_shop
+      # Required for stable JWT + Flask session signing in production
+      - SECRET_KEY=-OyXagnVz0VjrmZs0_3b3J8PF9Tv3b8VVMWymYqEbzox4qkzqXF74dP41NgNfm-5
+      - JWT_SECRET_KEY=0HyY9TspExyEqcytRwY0srPDVhwrkcX2aml__D_o_1xtf2PGBh5j60JXj-e6X_Ah
     depends_on:
       db:
         condition: service_healthy
