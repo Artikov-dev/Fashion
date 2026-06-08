@@ -53,26 +53,28 @@ def create_app(config_name='development'):
     jwt.init_app(app)
     migrate.init_app(app, db)
 
-    # CORS — allow frontend dev servers & production
-    cors_origins = [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:4173',
-        'http://localhost',
-        'http://localhost:80',
-        'https://fashion-clothes-shop-brown.vercel.app',
-    ]
-    
-    # Allow all origins in production for Docker deployment
-    if app.config.get('ENV') == 'production':
+    # CORS — production da barcha originlarga ruxsat (Nginx orqali keladi)
+    is_production = os.environ.get('FLASK_CONFIG', '') == 'production' or \
+                    os.environ.get('FLASK_ENV', '') == 'production'
+
+    if is_production:
         cors_origins = '*'
-    
+    else:
+        cors_origins = [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+            'http://localhost:4173',
+            'http://localhost',
+            'http://localhost:80',
+            'https://fashion-clothes-shop-brown.vercel.app',
+        ]
+
     CORS(
         app,
         resources={r'/api/*': {'origins': cors_origins}},
-        supports_credentials=True,
+        supports_credentials=not is_production,
         methods=['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allow_headers=['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
     )

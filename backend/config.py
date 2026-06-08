@@ -51,7 +51,6 @@ class TestingConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    ENV = 'production'
     SECRET_KEY = os.environ.get('SECRET_KEY')
     database_url = os.environ.get('DATABASE_URL')
     if database_url and database_url.startswith('postgres://'):
