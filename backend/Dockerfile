@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 8000
 
 # DB migration ishga tushiradi, keyin gunicorn
-CMD ["sh", "-c", "flask db upgrade && gunicorn wsgi:app -b 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile -"]
+CMD ["sh", "-c", "python3 -c 'from app import create_app; from extensions import db; app = create_app(\"production\"); app.app_context().push(); db.create_all()' && gunicorn wsgi:app -b 0.0.0.0:8000 --workers 4 --timeout 120 --access-logfile - --error-logfile -"]
