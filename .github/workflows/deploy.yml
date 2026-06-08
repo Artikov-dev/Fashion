@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: SSH into EC2 and create hello.txt
+    name: Build & Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
@@ -21,13 +21,24 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: 22
+          # command_timeout qo'shildi — docker build uzoq olishi mumkin
+          command_timeout: 10m
           script: |
             echo "====== Deploy started: $(date) ======"
 
-            # Hello.txt fayl yaratish
-            echo "Hello from GitHub Actions! Deploy time: $(date)" > /home/$USER/hello.txt
+            cd ~/Fashion
 
-            echo "hello.txt muvaffaqiyatli yaratildi:"
-            cat /home/$USER/hello.txt
+            echo "------ Pulling latest code ------"
+            git pull origin main
 
-            echo "====== Deploy finished ======"
+            echo "------ Stopping old containers ------"
+            docker-compose down
+
+            echo "------ Building and starting containers ------"
+            docker-compose up -d --build
+
+            echo "------ Waiting for containers to be healthy ------"
+            sleep 5
+            docker-compose ps
+
+            echo "====== Deploy finished: $(date) ======"

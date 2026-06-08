@@ -39,12 +39,12 @@ export default function Home() {
       >
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
         <div className="relative px-8 md:px-20 pb-20 text-white max-w-3xl animate-fadeUp">
-          <p className="text-xs tracking-[0.35em] uppercase text-[#c9a84c] mb-4">Summer / 2025 Collection</p>
+          <p className="text-xs tracking-[0.35em] uppercase mb-4" style={{ color: '#7ecfa8' }}>Summer / 2026 Collection — New Drop</p>
           <h1 className="text-6xl md:text-8xl font-light leading-none mb-6" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-            Define<br />Your Style
+            Elevate<br />Your Look
           </h1>
           <p className="text-base text-white/70 mb-8 max-w-md leading-relaxed">
-            Premium fashion curated for the discerning individual. Explore our latest arrivals.
+            Discover bold new silhouettes and timeless essentials — freshly curated for 2026.
           </p>
           <div className="flex gap-4 flex-wrap">
             <Link to="/products" className="btn-primary">Shop Collection</Link>
@@ -241,7 +241,7 @@ export default function Home() {
             ))}
           </div>
           <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
-            <p className="text-xs text-white/30">© 2025 VÊTEMENT. All rights reserved.</p>
+            <p className="text-xs text-white/30">© 2026 VÊTEMENT. All rights reserved.</p>
             <p className="text-xs text-white/30">Crafted with precision for the modern wardrobe.</p>
           </div>
         </div>
