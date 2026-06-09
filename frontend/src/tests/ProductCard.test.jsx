@@ -52,10 +52,10 @@ describe('ProductCard', () => {
     expect(onAddToCart).toHaveBeenCalledWith('Test Shirt')
   })
 
-  it('shows out of stock when stock is 0', () => {
+  it('shows sold out when stock is 0', () => {
     renderWithProviders(
       <ProductCard product={{ ...mockProduct, stock: 0 }} onAddToCart={vi.fn()} />
     )
-    expect(screen.getByText(/out of stock/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/sold out/i).length).toBeGreaterThan(0)
   })
 })
