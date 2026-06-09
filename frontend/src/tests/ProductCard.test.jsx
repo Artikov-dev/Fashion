@@ -1,6 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
+import { Provider } from 'react-redux'
+import { MemoryRouter } from 'react-router-dom'
+import { configureStore } from '@reduxjs/toolkit'
 import ProductCard from '../components/ProductCard'
+import cartReducer from '../features/cart/cartSlice'
 
 const mockProduct = {
   id: 1,
@@ -12,33 +16,46 @@ const mockProduct = {
   category: { name: 'Women' },
 }
 
+function renderWithProviders(ui) {
+  const store = configureStore({
+    reducer: { cart: cartReducer },
+  })
+  return render(
+    <Provider store={store}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </Provider>
+  )
+}
+
 describe('ProductCard', () => {
   it('renders product name', () => {
-    render(<ProductCard product={mockProduct} onAddToCart={vi.fn()} />)
+    renderWithProviders(<ProductCard product={mockProduct} onAddToCart={vi.fn()} />)
     expect(screen.getByText('Test Shirt')).toBeInTheDocument()
   })
 
   it('renders product price', () => {
-    render(<ProductCard product={mockProduct} onAddToCart={vi.fn()} />)
+    renderWithProviders(<ProductCard product={mockProduct} onAddToCart={vi.fn()} />)
     expect(screen.getByText(/89\.99/)).toBeInTheDocument()
   })
 
   it('renders product image', () => {
-    render(<ProductCard product={mockProduct} onAddToCart={vi.fn()} />)
+    renderWithProviders(<ProductCard product={mockProduct} onAddToCart={vi.fn()} />)
     const img = screen.getByRole('img')
     expect(img).toBeInTheDocument()
   })
 
   it('calls onAddToCart when add button clicked', () => {
     const onAddToCart = vi.fn()
-    render(<ProductCard product={mockProduct} onAddToCart={onAddToCart} />)
+    renderWithProviders(<ProductCard product={mockProduct} onAddToCart={onAddToCart} />)
     const btn = screen.getByRole('button')
     fireEvent.click(btn)
     expect(onAddToCart).toHaveBeenCalledWith('Test Shirt')
   })
 
   it('shows out of stock when stock is 0', () => {
-    render(<ProductCard product={{ ...mockProduct, stock: 0 }} onAddToCart={vi.fn()} />)
+    renderWithProviders(
+      <ProductCard product={{ ...mockProduct, stock: 0 }} onAddToCart={vi.fn()} />
+    )
     expect(screen.getByText(/out of stock/i)).toBeInTheDocument()
   })
 })
