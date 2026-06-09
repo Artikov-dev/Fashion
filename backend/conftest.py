@@ -42,13 +42,15 @@ def auth_headers(client):
 @pytest.fixture(scope='function')
 def admin_headers(client, db):
     from models.user import User
-    admin = User(email='admin@test.com', role='admin', name='Admin')
+    import uuid
+    email = f'admin_{uuid.uuid4().hex[:8]}@test.com'
+    admin = User(email=email, role='admin', name='Admin')
     admin.set_password('admin1234')
     db.session.add(admin)
     db.session.commit()
 
     res = client.post('/api/auth/login', json={
-        'email': 'admin@test.com',
+        'email': email,
         'password': 'admin1234'
     })
     token = res.get_json()['data']['access_token']

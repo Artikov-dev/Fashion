@@ -26,7 +26,7 @@ class TestProducts:
         res = client.get('/api/products/', headers=auth_headers)
         data = res.get_json()
         assert res.status_code == 200
-        assert isinstance(data.get('data') or data.get('products') or data, (list, dict))
+        assert isinstance(data, (list, dict))
 
     def test_get_categories(self, client, auth_headers, db):
         if not Category.query.first():
