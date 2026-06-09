@@ -1,20 +1,4 @@
 services:
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: fashion_user
-      POSTGRES_PASSWORD: fashion_password
-      POSTGRES_DB: fashion_shop
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fashion_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     build: ./backend
     ports:
@@ -24,12 +8,8 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_CONFIG=production
-      - DATABASE_URL=postgresql://fashion_user:fashion_password@db:5432/fashion_shop
-    depends_on:
-      db:
-        condition: service_healthy
     volumes:
-      - ./backend:/app
+      - sqlite_data:/app/instance
 
   frontend:
     build: ./frontend
@@ -39,4 +19,4 @@ services:
       - backend
 
 volumes:
-  postgres_data:
+  sqlite_data:

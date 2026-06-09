@@ -99,6 +99,7 @@ export default function Auth() {
                 <input
                   type="text"
                   required
+                  autoComplete="name"
                   value={form.name}
                   onChange={update('name')}
                   placeholder="Your name"
@@ -114,6 +115,7 @@ export default function Auth() {
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={form.email}
                 onChange={update('email')}
                 placeholder="you@example.com"
@@ -128,6 +130,7 @@ export default function Auth() {
               <input
                 type="password"
                 required
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
                 value={form.password}
                 onChange={update('password')}
                 placeholder="••••••••"
