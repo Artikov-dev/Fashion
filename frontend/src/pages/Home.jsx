@@ -39,9 +39,9 @@ export default function Home() {
       >
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
         <div className="relative px-8 md:px-20 pb-20 text-white max-w-3xl animate-fadeUp">
-          <p className="text-xs tracking-[0.35em] uppercase mb-4" style={{ color: '#7ecfa8' }}>Summer / 2026 Collection — Auto Deploy ✓</p>
+          <p className="text-xs tracking-[0.35em] uppercase mb-4" style={{ color: '#7ecfa8' }}>Summer / 2026 Collection — CI/CD ✓</p>
           <h1 className="text-6xl md:text-8xl font-light leading-none mb-6" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-            Elevate<br />Your Style
+            Elevate<br />Your World
           </h1>
           <p className="text-base text-white/70 mb-8 max-w-md leading-relaxed">
             Discover bold new silhouettes and timeless essentials — freshly curated for 2026.
