@@ -40,12 +40,12 @@ export default function Home() {
       >
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
         <div className="relative px-8 md:px-20 pb-20 text-white max-w-3xl animate-fadeUp">
-          <p className="text-xs tracking-[0.35em] uppercase mb-4" style={{ color: '#7ecfa8' }}>Summer / 2026 — Tests Pass, Deploy Go</p>
+          <p className="text-xs tracking-[0.35em] uppercase mb-4" style={{ color: '#c9a84c' }}>New Collection / 2026</p>
           <h1 className="text-6xl md:text-8xl font-light leading-none mb-6" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-            Own<br />The Look
+            Define<br />Elegance
           </h1>
           <p className="text-base text-white/70 mb-8 max-w-md leading-relaxed">
-            Discovereeeerrrrrr bold new silhouettes and timeless essentials — freshly curated for 2026.
+            Discover bold new silhouettes and timeless essentials — freshly curated for 2026.
           </p>
           <div className="flex gap-4 flex-wrap">
             <Link to="/products" className="btn-primary">Shop Collection</Link>
