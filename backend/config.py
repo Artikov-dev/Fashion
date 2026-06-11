@@ -4,86 +4,68 @@ import secrets
 from datetime import timedelta
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_SQLITE_PATH = os.path.join(BASE_DIR, 'instance', 'fashion_shop.db')
+DEFAULT_SQLITE_PATH = os.path.join(BASE_DIR, 'instance', 'nexora_crm.db')
+
+
+def _resolve_db_url():
+    url = os.environ.get('DATABASE_URL', '')
+    if url.startswith('postgres://'):
+        url = url.replace('postgres://', 'postgresql://', 1)
+    return url or f'sqlite:///{DEFAULT_SQLITE_PATH}'
+
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
-    # For development: always use SQLite unless DATABASE_URL is explicitly set to postgresql
-    # Render uses postgres:// but SQLAlchemy needs postgresql://
-    database_url = os.environ.get('DATABASE_URL') or f'sqlite:///{DEFAULT_SQLITE_PATH}'
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    # Force SQLite for development if running locally and no DATABASE_URL is explicitly set
-    if not os.environ.get('DATABASE_URL'):
-        database_url = f'sqlite:///{DEFAULT_SQLITE_PATH}'
-    SQLALCHEMY_DATABASE_URI = database_url
+    SECRET_KEY             = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(48)
+    SQLALCHEMY_DATABASE_URI = _resolve_db_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Ensure a sufficiently long JWT secret.
-    # Production deployments should provide JWT_SECRET_KEY, but we also add a safe fallback
-    # to prevent the app from failing to boot due to misconfiguration.
-    _raw_jwt_key = os.environ.get('JWT_SECRET_KEY') or 'jwt-secret-key'
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle':  300,
+    }
+
+    _raw_jwt_key = os.environ.get('JWT_SECRET_KEY') or ''
     if len(_raw_jwt_key) < 32:
-        warnings.warn(
-            'JWT_SECRET_KEY is missing or shorter than 32 bytes. Generating a secure runtime key as a fallback. '
-            'Set JWT_SECRET_KEY explicitly for production to keep tokens valid across restarts.',
-            UserWarning,
-        )
         _raw_jwt_key = secrets.token_urlsafe(48)
-    JWT_SECRET_KEY = _raw_jwt_key
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
+    JWT_SECRET_KEY              = _raw_jwt_key
+    JWT_ACCESS_TOKEN_EXPIRES    = timedelta(hours=2)
+    JWT_REFRESH_TOKEN_EXPIRES   = timedelta(days=30)
 
     @staticmethod
     def init_app(app):
         pass
 
+
 class DevelopmentConfig(Config):
     DEBUG = True
 
+
 class TestingConfig(Config):
     TESTING = True
-    DEBUG = True
-    # Use SQLite for testing to avoid PostgreSQL dependency
+    DEBUG   = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
-    # Use a sufficiently long deterministic test key
-    JWT_SECRET_KEY = os.environ.get('TEST_JWT_SECRET') or 'test-jwt-secret-please-change-0123456789'
+    JWT_SECRET_KEY = 'test-jwt-secret-please-change-0123456789abcdef'
     WTF_CSRF_ENABLED = False
+
 
 class ProductionConfig(Config):
     DEBUG = False
-    SECRET_KEY = os.environ.get('SECRET_KEY')
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    # Robust import-time fallback if DATABASE_URL isn't set
-    SQLALCHEMY_DATABASE_URI = database_url or Config.SQLALCHEMY_DATABASE_URI
 
     @classmethod
     def init_app(cls, app):
-        # Avoid hard-crashing on missing SECRET_KEY in production.
-        # JWT_SECRET_KEY is handled in the base Config with a secure fallback.
-        # SECRET_KEY is required by Flask for sessions/csrf signing.
-        if not cls.SECRET_KEY:
-            warnings.warn(
-                'SECRET_KEY is missing in production. Generating a secure runtime key as a fallback. '
-                'Set SECRET_KEY explicitly for production to keep session/csrf signing stable across restarts.',
-                UserWarning,
-            )
-            cls.SECRET_KEY = secrets.token_urlsafe(48)
+        db_url = os.environ.get('DATABASE_URL', '')
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        if db_url:
+            cls.SQLALCHEMY_DATABASE_URI = db_url
+        if not os.environ.get('SECRET_KEY'):
+            warnings.warn('SECRET_KEY not set — using a random key (sessions invalid on restart)')
+        if not os.environ.get('JWT_SECRET_KEY'):
+            warnings.warn('JWT_SECRET_KEY not set — tokens invalid on restart')
 
-        # If DATABASE_URL is missing (e.g., local run with production config),
-        # fall back to the base Config SQLite URL to avoid import-time crashes.
-        if not cls.SQLALCHEMY_DATABASE_URI:
-            warnings.warn(
-                'DATABASE_URL is missing in production. Falling back to SQLite for runtime (not recommended for real prod).',
-                UserWarning,
-            )
-            cls.SQLALCHEMY_DATABASE_URI = Config.SQLALCHEMY_DATABASE_URI
 
-# Configuration dictionary
 config = {
     'development': DevelopmentConfig,
-    'testing': TestingConfig,
-    'production': ProductionConfig,
-    'default': DevelopmentConfig
+    'testing':     TestingConfig,
+    'production':  ProductionConfig,
+    'default':     DevelopmentConfig,
 }

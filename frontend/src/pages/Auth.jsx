@@ -12,21 +12,21 @@ export default function Auth() {
   const [isLogin, setIsLogin]   = useState(true);
   const [form, setForm]         = useState({ email: '', password: '', name: '' });
 
-  const from = location.state?.from?.pathname || '/home';
+  const from = location.state?.from?.pathname || '/dashboard';
 
   useEffect(() => {
-    if (user) navigate(user.role === 'admin' ? '/admin' : from, { replace: true });
-  }, [user, navigate, from]);
+    if (user) navigate('/dashboard', { replace: true });
+  }, [user, navigate]);
 
   useEffect(() => {
     if (successMsg) {
       const t = setTimeout(() => {
         dispatch(clearMessages());
-        navigate(user?.role === 'admin' ? '/admin' : from, { replace: true });
+        navigate('/dashboard', { replace: true });
       }, 800);
       return () => clearTimeout(t);
     }
-  }, [successMsg, dispatch, navigate, user, from]);
+  }, [successMsg, dispatch, navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -41,47 +41,52 @@ export default function Auth() {
   const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
 
   return (
-    <div className="min-h-screen flex" style={{ fontFamily: 'Jost, sans-serif' }}>
-      {/* Left: image panel */}
-      <div
-        className="hidden lg:flex lg:w-1/2 relative items-end p-12"
-        style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 30%',
-        }}
-      >
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)' }} />
-        <div className="relative text-white">
-          <p className="text-xs tracking-[0.3em] uppercase text-[#c9a84c] mb-3">New Season</p>
-          <h2 className="text-5xl font-light leading-tight" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-            Dress to<br />Impress
-          </h2>
-          <p className="mt-4 text-sm text-white/70 max-w-xs leading-relaxed">
-            Curated fashion from the world's finest designers. Explore our latest collection.
+    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#0F172A]">
+      {/* Left: branding panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-[#0F172A] p-12">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#185FA5] flex items-center justify-center text-white text-3xl font-bold mx-auto mb-6">
+            N
+          </div>
+          <h2 className="text-4xl font-bold text-white tracking-wide mb-3">NEXORA CRM</h2>
+          <p className="text-white/50 text-sm max-w-xs leading-relaxed">
+            Mijozlaringizni boshqaring, leadlarni kuzating va biznesingizni o'stirish uchun zamonaviy CRM tizimi.
           </p>
+          <div className="mt-10 grid grid-cols-3 gap-6 text-center">
+            {[
+              { icon: '◎', label: 'Kontaktlar' },
+              { icon: '◈', label: 'Pipeline' },
+              { icon: '▲', label: 'Analitika' },
+            ].map(({ icon, label }) => (
+              <div key={label} className="bg-white/5 rounded-xl p-4">
+                <div className="text-2xl text-[#185FA5] mb-2">{icon}</div>
+                <p className="text-xs text-white/40 font-medium">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Right: form panel */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 bg-[#f5f2ee]">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 bg-[#F8FAFC] dark:bg-[#0F172A]">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-10 text-center">
-            <h1 className="text-3xl font-light tracking-[0.2em]" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-              VÊTEMENT
-            </h1>
-            <div className="divider mt-4 mb-0" />
+          <div className="mb-8 text-center">
+            <div className="w-12 h-12 rounded-xl bg-[#185FA5] flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">N</div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">NEXORA CRM</h1>
+            <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Tizimga kirish</p>
           </div>
 
           {/* Tab toggle */}
-          <div className="flex mb-8 border-b border-[#d1ccc6]">
-            {['Sign In', 'Register'].map((label, i) => (
+          <div className="flex mb-6 border-b border-gray-200 dark:border-white/10">
+            {[['Kirish', true], ["Ro'yxatdan o'tish", false]].map(([label, isL]) => (
               <button
                 key={label}
-                onClick={() => { setIsLogin(i === 0); dispatch(clearMessages()); }}
-                className={`flex-1 pb-3 text-xs font-semibold tracking-widest uppercase transition-colors ${
-                  (i === 0) === isLogin ? 'tab-active' : 'tab-inactive'
+                onClick={() => { setIsLogin(isL); dispatch(clearMessages()); }}
+                className={`flex-1 pb-3 text-xs font-semibold tracking-wide uppercase transition-colors border-b-2 ${
+                  isLogin === isL
+                    ? 'border-[#185FA5] text-[#185FA5]'
+                    : 'border-transparent text-gray-400 dark:text-white/30 hover:text-gray-600'
                 }`}
               >
                 {label}
@@ -103,7 +108,7 @@ export default function Auth() {
                   value={form.name}
                   onChange={update('name')}
                   placeholder="Your name"
-                  className="input-fashion"
+                  className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-white outline-none focus:border-[#185FA5] transition-colors"
                 />
               </div>
             )}
@@ -119,7 +124,7 @@ export default function Auth() {
                 value={form.email}
                 onChange={update('email')}
                 placeholder="you@example.com"
-                className="input-fashion"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-white outline-none focus:border-[#185FA5] transition-colors"
               />
             </div>
 
@@ -134,7 +139,7 @@ export default function Auth() {
                 value={form.password}
                 onChange={update('password')}
                 placeholder="••••••••"
-                className="input-fashion"
+                className="w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-gray-800 dark:text-white outline-none focus:border-[#185FA5] transition-colors"
               />
             </div>
 
@@ -150,8 +155,9 @@ export default function Auth() {
               </p>
             )}
 
-            <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
-              {loading ? 'Please wait…' : isLogin ? 'Sign In' : 'Create Account'}
+            <button type="submit" disabled={loading}
+              className="w-full py-2.5 mt-2 bg-[#185FA5] text-white text-sm font-semibold rounded-lg hover:bg-[#1451A0] disabled:opacity-50 transition-colors">
+              {loading ? 'Kuting…' : isLogin ? 'Kirish' : "Ro'yxatdan o'tish"}
             </button>
           </form>
 

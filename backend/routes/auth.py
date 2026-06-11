@@ -70,7 +70,7 @@ def register():
         if user_exists:
             return jsonify({'success': False, 'message': 'An account with this email already exists'}), 409
 
-        user = User(email=email, role='customer', name=name or None)
+        user = User(email=email, role='user', name=name or None)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()

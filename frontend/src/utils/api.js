@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-const rawBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const API_URL = rawBase.replace(/\/$/, '').endsWith('/api')
-  ? rawBase.replace(/\/$/, '')
-  : `${rawBase.replace(/\/$/, '')}/api`;
+// Agar VITE_API_URL belgilanmagan bo'lsa, vite proxy orqali /api ishlatiladi
+const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 
 const api = axios.create({
   baseURL: API_URL,
@@ -47,7 +45,8 @@ api.interceptors.response.use(
       }
       try {
         const res = await axios.post(`${API_URL}/auth/refresh`, {}, {
-          headers: { Authorization: `Bearer ${refreshToken}` }
+          headers: { Authorization: `Bearer ${refreshToken}` },
+          baseURL: '',
         });
         const newToken = res.data?.data?.access_token ?? res.data?.access_token;
         if (newToken) {
@@ -61,7 +60,10 @@ api.interceptors.response.use(
         flush(e);
         isRefreshing = false;
         localStorage.clear();
-        window.location.href = '/auth';
+        // Use replace so back button doesn't loop
+        if (window.location.pathname !== '/auth') {
+          window.location.replace('/auth');
+        }
         return Promise.reject(e);
       }
     }

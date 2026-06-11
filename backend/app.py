@@ -1,10 +1,5 @@
 """
-Flask application factory.
-Changes vs original:
-  - Registers the new wishlist_bp blueprint
-  - Adds CORS origins for common dev ports
-  - Imports WishlistItem model so its table is created
-  - Keeps all existing blueprints and JWT configuration
+Nexora CRM — Flask Application Factory
 """
 
 import os
@@ -12,18 +7,19 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_migrate import Migrate
-from flasgger import Swagger
 
 from config import config as app_config
 from extensions import db, jwt
-from models.tokenblacklist import TokenBlacklist
 
 # Import all models so SQLAlchemy registers their tables
-from models.user    import User
-from models.product import Product, Category
-from models.cart    import Cart, CartItem, Invoice
-from models.order   import Order, OrderItem
-from models.wishlist import Wishlist, WishlistItem   # NEW
+from models.user           import User
+from models.tokenblacklist import TokenBlacklist
+from models.contact        import Contact
+from models.pipeline       import Stage
+from models.lead           import Lead
+from models.deal           import Deal
+from models.task           import Task
+from models.activity       import Activity
 
 migrate = Migrate()
 
@@ -53,23 +49,19 @@ def create_app(config_name='development'):
     jwt.init_app(app)
     migrate.init_app(app, db)
 
-    # CORS — production da barcha originlarga ruxsat (Nginx orqali keladi)
+    # CORS
     is_production = os.environ.get('FLASK_CONFIG', '') == 'production' or \
                     os.environ.get('FLASK_ENV', '') == 'production'
 
-    if is_production:
-        cors_origins = '*'
-    else:
-        cors_origins = [
-            'http://localhost:5173',
-            'http://127.0.0.1:5173',
-            'http://localhost:3000',
-            'http://127.0.0.1:3000',
-            'http://localhost:4173',
-            'http://localhost',
-            'http://localhost:80',
-            'https://fashion-clothes-shop-brown.vercel.app',
-        ]
+    cors_origins = '*' if is_production else [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'http://localhost:4173',
+        'http://localhost:80',
+        'http://localhost',
+    ]
 
     CORS(
         app,
@@ -80,65 +72,34 @@ def create_app(config_name='development'):
     )
 
     # Blueprints
-    from routes.auth     import auth_bp
-    from routes.products import products_bp
-    from routes.cart     import cart_bp
-    from routes.orders   import orders_bp
-    from routes.admin    import admin_bp
-    from routes.wishlist import wishlist_bp   # NEW
+    from routes.auth       import auth_bp
+    from routes.contacts   import contacts_bp
+    from routes.leads      import leads_bp
+    from routes.deals      import deals_bp
+    from routes.tasks      import tasks_bp
+    from routes.pipeline   import pipeline_bp
+    from routes.activities import activities_bp
+    from routes.analytics  import analytics_bp
+    from routes.admin      import admin_bp
 
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(products_bp)
-    app.register_blueprint(cart_bp)
-    app.register_blueprint(orders_bp)
-    app.register_blueprint(admin_bp)
-    app.register_blueprint(wishlist_bp)      # NEW
+    for bp in [auth_bp, contacts_bp, leads_bp, deals_bp, tasks_bp,
+               pipeline_bp, activities_bp, analytics_bp, admin_bp]:
+        app.register_blueprint(bp)
 
-    # Swagger
-    swagger_config = {
-        'headers': [],
-        'specs': [{'endpoint': 'apispec', 'route': '/swagger.json',
-                   'rule_filter': lambda rule: True, 'model_filter': lambda tag: True}],
-        'static_url_path': '/flasgger_static',
-        'swagger_ui': True,
-        'specs_route': '/swagger/',
-    }
-    swagger_template = {
-        'swagger': '2.0',
-        'info': {
-            'title':       'Fashion Clothes Store API',
-            'description': 'REST API for the Fashion E-Commerce platform',
-            'version':     '2.0.0',
-        },
-        'basePath': '/api',
-        'schemes':  ['http', 'https'],
-    }
-    Swagger(app, config=swagger_config, template=swagger_template)
-
-    # Health / root
+    # Health endpoints
     @app.route('/')
     def home():
         return {
-            'message': 'Fashion Clothes Shop API',
+            'message': 'Nexora CRM API',
             'status':  'running',
-            'version': '2.0',
-            'docs':    '/swagger/',
+            'version': '1.0.0',
         }
 
     @app.route('/health')
-    def health():
-        """Health check endpoint for Docker/Kubernetes liveness probes"""
-        try:
-            db.session.execute('SELECT 1')
-            return {'status': 'healthy', 'database': 'connected'}, 200
-        except Exception as e:
-            return {'status': 'unhealthy', 'database': 'failed', 'error': str(e)}, 503
-
     @app.route('/api/health')
-    def api_health():
-        """Health check for API (same as /health but under /api)"""
+    def health():
         try:
-            db.session.execute('SELECT 1')
+            db.session.execute(db.text('SELECT 1'))
             return {'status': 'healthy', 'database': 'connected'}, 200
         except Exception as e:
             return {'status': 'unhealthy', 'database': 'failed', 'error': str(e)}, 503

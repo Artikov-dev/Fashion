@@ -3,17 +3,19 @@ Models package — import order matters for SQLAlchemy relationship resolution.
 """
 from extensions import db
 
-from models.user import User
-from models.product import Product, Category
-from models.cart import Cart, CartItem, Invoice
-from models.order import Order, OrderItem
-from models.wishlist import Wishlist, WishlistItem
+from models.user           import User
+from models.tokenblacklist import TokenBlacklist
+from models.contact        import Contact
+from models.pipeline       import Stage
+from models.lead           import Lead
+from models.deal           import Deal
+from models.task           import Task
+from models.activity       import Activity
 
 __all__ = [
     'db',
-    'User',
-    'Product', 'Category',
-    'Cart', 'CartItem', 'Invoice',
-    'Order', 'OrderItem',
-    'Wishlist', 'WishlistItem',
+    'User', 'TokenBlacklist',
+    'Contact', 'Stage',
+    'Lead', 'Deal',
+    'Task', 'Activity',
 ]

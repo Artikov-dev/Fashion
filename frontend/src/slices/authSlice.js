@@ -2,9 +2,11 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../utils/api';
 
 const persist = (payload) => {
-  localStorage.setItem('user', JSON.stringify(payload.user));
-  localStorage.setItem('access_token', payload.access_token);
+  localStorage.setItem('user',          JSON.stringify(payload.user));
+  localStorage.setItem('access_token',  payload.access_token);
   localStorage.setItem('refresh_token', payload.refresh_token);
+  // role ni alohida ham saqlaymiz — tezkor tekshirish uchun
+  localStorage.setItem('user_role', payload.user?.role || 'user');
 };
 
 export const registerUser = createAsyncThunk('auth/register', async (data, { rejectWithValue }) => {
@@ -31,40 +33,60 @@ export const logoutUser = createAsyncThunk('auth/logout', async () => {
 
 export const refreshToken = createAsyncThunk('auth/refresh', async (_, { rejectWithValue }) => {
   try {
-    const rt = localStorage.getItem('refresh_token');
-    const res = await api.post('/auth/refresh', {}, { headers: { Authorization: `Bearer ${rt}` } });
+    const rt  = localStorage.getItem('refresh_token');
+    const res = await api.post('/auth/refresh', {}, {
+      headers: { Authorization: `Bearer ${rt}` },
+    });
     return res.data?.data ?? res.data;
   } catch (e) {
     return rejectWithValue('Refresh failed');
   }
 });
 
+export const fetchMe = createAsyncThunk('auth/fetchMe', async (_, { rejectWithValue }) => {
+  try {
+    const res = await api.get('/auth/me');
+    return res.data?.data ?? res.data;
+  } catch (e) {
+    return rejectWithValue(e.response?.data?.message || 'Failed to fetch profile');
+  }
+});
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: JSON.parse(localStorage.getItem('user') || 'null'),
+    user:       JSON.parse(localStorage.getItem('user') || 'null'),
     accessToken: localStorage.getItem('access_token') || null,
-    loading: false,
-    error: null,
+    loading:    false,
+    error:      null,
     successMsg: null,
   },
   reducers: {
     clearMessages: (s) => { s.error = null; s.successMsg = null; },
+    setUser: (s, a) => {
+      s.user = a.payload;
+      localStorage.setItem('user', JSON.stringify(a.payload));
+      localStorage.setItem('user_role', a.payload?.role || 'user');
+    },
   },
   extraReducers: (b) => {
     b
-      .addCase(registerUser.pending,  (s) => { s.loading = true;  s.error = null; })
-      .addCase(registerUser.fulfilled,(s, a) => {
-        s.loading = false; s.user = a.payload.user; s.accessToken = a.payload.access_token;
-        s.successMsg = 'Account created! Welcome.';
+      .addCase(registerUser.pending,  (s) => { s.loading = true; s.error = null; })
+      .addCase(registerUser.fulfilled, (s, a) => {
+        s.loading = false;
+        s.user    = a.payload.user;
+        s.accessToken = a.payload.access_token;
+        s.successMsg  = 'Hisob yaratildi! Xush kelibsiz.';
         persist(a.payload);
       })
       .addCase(registerUser.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
 
-      .addCase(loginUser.pending,  (s) => { s.loading = true;  s.error = null; })
-      .addCase(loginUser.fulfilled,(s, a) => {
-        s.loading = false; s.user = a.payload.user; s.accessToken = a.payload.access_token;
-        s.successMsg = `Welcome back, ${a.payload.user?.name || a.payload.user?.email}`;
+      .addCase(loginUser.pending, (s) => { s.loading = true; s.error = null; })
+      .addCase(loginUser.fulfilled, (s, a) => {
+        s.loading = false;
+        s.user    = a.payload.user;
+        s.accessToken = a.payload.access_token;
+        s.successMsg  = `Xush kelibsiz, ${a.payload.user?.name || a.payload.user?.email}`;
         persist(a.payload);
       })
       .addCase(loginUser.rejected, (s, a) => { s.loading = false; s.error = a.payload; })
@@ -77,9 +99,21 @@ const authSlice = createSlice({
       .addCase(refreshToken.fulfilled, (s, a) => {
         const t = a.payload?.access_token;
         if (t) { s.accessToken = t; localStorage.setItem('access_token', t); }
+      })
+
+      .addCase(fetchMe.fulfilled, (s, a) => {
+        s.user = a.payload;
+        localStorage.setItem('user', JSON.stringify(a.payload));
+        localStorage.setItem('user_role', a.payload?.role || 'user');
       });
   },
 });
 
-export const { clearMessages } = authSlice.actions;
+export const { clearMessages, setUser } = authSlice.actions;
+
+// Selectors
+export const selectUser    = (state) => state.auth.user;
+export const selectRole    = (state) => state.auth.user?.role || 'user';
+export const selectIsAdmin = (state) => state.auth.user?.role === 'admin';
+
 export default authSlice.reducer;

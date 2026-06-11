@@ -1,22 +1,57 @@
+version: '3.9'
+
 services:
-  backend:
-    build: ./backend
+
+  db:
+    image: postgres:15-alpine
+    container_name: nexora_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER:-nexora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexora_secret}
+      POSTGRES_DB:       ${POSTGRES_DB:-nexora_crm}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "8000:8000"
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nexora}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nexora_backend
+    restart: unless-stopped
     env_file:
       - ./backend/.env
     environment:
-      - FLASK_ENV=production
-      - FLASK_CONFIG=production
-    volumes:
-      - sqlite_data:/app/instance
+      FLASK_CONFIG:  production
+      FLASK_ENV:     production
+      DATABASE_URL:  postgresql://${POSTGRES_USER:-nexora}:${POSTGRES_PASSWORD:-nexora_secret}@db:5432/${POSTGRES_DB:-nexora_crm}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "flask db upgrade && gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 wsgi:app"
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nexora_frontend
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
       - backend
+    environment:
+      VITE_API_URL: http://localhost:8000/api
 
 volumes:
-  sqlite_data:
+  postgres_data:

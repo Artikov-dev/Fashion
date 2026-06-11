@@ -1,77 +1,121 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect, Component, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { AnimatePresence, motion } from 'framer-motion';
+import { selectTheme } from './slices/uiSlice';
 
-import Navbar        from './components/Navbar';
+import Layout         from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 
-import Auth          from './pages/Auth';
-import Home          from './pages/Home';
-import Products      from './pages/Products';
-import ProductDetail from './pages/ProductDetail';
-import Cart          from './pages/Cart';
-import Checkout      from './pages/Checkout';
-import OrderSuccess  from './pages/OrderSuccess';
-import OrderHistory  from './pages/OrderHistory';
-import Admin         from './pages/Admin';
+// Auth (small — not lazy)
+import Auth from './pages/Auth';
 
-export default function App() {
-  const user = useSelector((s) => s.auth.user);
+// Lazy-load CRM pages so one page crash won't kill the whole app
+const Dashboard    = lazy(() => import('./pages/Dashboard'));
+const Pipeline     = lazy(() => import('./pages/Pipeline'));
+const Contacts     = lazy(() => import('./pages/Contacts'));
+const ContactDetail = lazy(() => import('./pages/ContactDetail'));
+const Leads        = lazy(() => import('./pages/Leads'));
+const LeadDetail   = lazy(() => import('./pages/LeadDetail'));
+const Tasks        = lazy(() => import('./pages/Tasks'));
+const Analytics    = lazy(() => import('./pages/Analytics'));
+const Admin        = lazy(() => import('./pages/Admin'));
+const Settings     = lazy(() => import('./pages/Settings'));
+
+// Page-level spinner
+function PageLoader() {
   return (
-    <BrowserRouter>
-      <Navbar />
-      <AnimatedRoutes user={user} />
-    </BrowserRouter>
+    <div className="flex items-center justify-center h-64">
+      <div className="h-6 w-6 border-2 border-[#185FA5] border-t-transparent rounded-full animate-spin" />
+    </div>
   );
 }
 
-function AnimatedRoutes({ user }) {
-  const location = useLocation();
+// Global error boundary — shows error instead of blank screen
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(e) { return { error: e }; }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A] p-8">
+          <div className="max-w-md w-full bg-white dark:bg-[#1E293B] rounded-2xl p-8 border border-red-200 dark:border-red-500/20 shadow-lg text-center">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Xato yuz berdi</h1>
+            <p className="text-sm text-gray-500 dark:text-white/40 mb-6 font-mono bg-gray-50 dark:bg-white/5 p-3 rounded-lg text-left overflow-auto max-h-32">
+              {this.state.error?.message || String(this.state.error)}
+            </p>
+            <button
+              onClick={() => { localStorage.clear(); window.location.href = '/auth'; }}
+              className="px-5 py-2 bg-[#185FA5] text-white text-sm font-medium rounded-xl hover:bg-[#1451A0] transition-colors"
+            >
+              Qayta boshlash
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
-  const pageProps = {
-    initial: { opacity: 0, y: 12 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -8 },
-    transition: { duration: 0.45, ease: 'easeInOut' },
-  };
+function CRMRoute({ children, roles }) {
+  return (
+    <ProtectedRoute roles={roles}>
+      <Layout>
+        <Suspense fallback={<PageLoader />}>
+          {children}
+        </Suspense>
+      </Layout>
+    </ProtectedRoute>
+  );
+}
+
+export default function App() {
+  const user  = useSelector((s) => s.auth.user);
+  const theme = useSelector(selectTheme);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
 
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        {/* Public */}
-        <Route path="/auth" element={
-          user ? <Navigate to={user.role === 'admin' ? '/admin' : '/home'} replace /> : (
-            <motion.div {...pageProps}><Auth /></motion.div>
-          )
-        } />
-        <Route path="/"     element={<Navigate to={user ? (user.role === 'admin' ? '/admin' : '/home') : '/auth'} replace />} />
+    <ErrorBoundary>
+      <BrowserRouter>
+        <Routes>
+          {/* Root redirect */}
+          <Route path="/"
+            element={<Navigate to={user ? '/dashboard' : '/auth'} replace />}
+          />
 
-        {/* Customer */}
-        <Route path="/home"          element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/products"      element={<ProtectedRoute><Products /></ProtectedRoute>} />
-        <Route path="/products/:id"  element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
-        <Route path="/cart"          element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-        <Route path="/checkout"      element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-        <Route path="/order-success" element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>} />
-        <Route path="/orders/history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+          {/* Auth */}
+          <Route path="/auth"
+            element={user ? <Navigate to="/dashboard" replace /> : <Auth />}
+          />
 
-        {/* Admin */}
-        <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
-        {/* Legacy admin routes */}
-        <Route path="/admin/orders"    element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
-        <Route path="/admin/analytics" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
+          {/* CRM routes */}
+          <Route path="/dashboard"    element={<CRMRoute><Dashboard /></CRMRoute>} />
+          <Route path="/pipeline"     element={<CRMRoute><Pipeline /></CRMRoute>} />
+          <Route path="/contacts"     element={<CRMRoute><Contacts /></CRMRoute>} />
+          <Route path="/contacts/:id" element={<CRMRoute><ContactDetail /></CRMRoute>} />
+          <Route path="/leads"        element={<CRMRoute><Leads /></CRMRoute>} />
+          <Route path="/leads/:id"    element={<CRMRoute><LeadDetail /></CRMRoute>} />
+          <Route path="/tasks"        element={<CRMRoute><Tasks /></CRMRoute>} />
+          <Route path="/analytics"    element={<CRMRoute roles={['admin','manager']}><Analytics /></CRMRoute>} />
+          <Route path="/admin"        element={<CRMRoute roles={['admin']}><Admin /></CRMRoute>} />
+          <Route path="/settings"     element={<CRMRoute><Settings /></CRMRoute>} />
 
-        {/* 404 */}
-        <Route path="*" element={
-          <motion.div {...pageProps} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f2ee', fontFamily: 'Cormorant Garamond, serif' }}>
-            <h1 style={{ fontSize: 120, fontWeight: 300, color: '#d1ccc6', lineHeight: 1 }}>404</h1>
-            <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 14, color: '#9e9589', marginBottom: 32 }}>This page doesn't exist.</p>
-            <a href="/" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 28px', background: '#0a0a0a', color: '#fff', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Jost, sans-serif' }}>
-              Go Homeeee
-            </a>
-          </motion.div>
-        } />
-      </Routes>
-    </AnimatePresence>
+          {/* 404 */}
+          <Route path="*" element={
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC] dark:bg-[#0F172A]">
+              <h1 className="text-8xl font-bold text-gray-200 dark:text-white/10">404</h1>
+              <p className="text-sm text-gray-400 dark:text-white/30 mt-4 mb-6">Sahifa topilmadi</p>
+              <a href="/" className="px-6 py-2.5 bg-[#185FA5] text-white text-sm font-medium rounded-xl hover:bg-[#1451A0] transition-colors">
+                Bosh sahifaga
+              </a>
+            </div>
+          } />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

@@ -1,392 +1,608 @@
 import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories } from '../slices/productsSlice';
-import { fetchAllOrders, updateOrderStatus } from '../features/orders/ordersSlice';
 import api from '../utils/api';
-import { FaChartBar, FaTshirt, FaBoxOpen, FaUsers, FaMoneyBillWave } from 'react-icons/fa';
+import Avatar from '../components/UI/Avatar';
 
-const SECTIONS = ['Dashboard', 'Products', 'Orders', 'Users'];
-const STATUS_OPTS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-
-function StatCard({ title, value, icon, color }) {
-  return (
-    <div className="bg-white p-6" style={{ borderLeft: `3px solid ${color}` }}>
-      <div className="flex justify-between items-start">
-        <div>
-          <p className="text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">{title}</p>
-          <p className="text-3xl font-light" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{value}</p>
-        </div>
-        <span className="text-3xl">{icon}</span>
-      </div>
-    </div>
-  );
-}
-
-function SectionHeader({ title, action }) {
-  return (
-    <div className="flex items-end justify-between mb-6">
-      <div>
-        <div className="gold-line" style={{ margin: '0 0 8px' }} />
-        <h2 className="text-2xl font-light" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{title}</h2>
-      </div>
-      {action}
-    </div>
-  );
-}
-
-const STATUS_COLORS = {
-  pending: '#fef3c7', processing: '#dbeafe', shipped: '#d1fae5', delivered: '#f0fdf4', cancelled: '#fee2e2'
+/* ── SVG icons ─────────────────────────────────────────────── */
+const Ico = {
+  Users: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg>,
+  Stats: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>,
+  Audit: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+  Plus: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Edit: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Block: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>,
+  Unlock: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>,
+  Trash: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>,
+  Search: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  X: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Check: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  Eye: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  EyeOff: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>,
+  ChevLeft: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M15 18l-6-6 6-6"/></svg>,
+  ChevRight: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>,
 };
 
-export default function AdminDashboard() {
-  const dispatch  = useDispatch();
-  const { items: products, categories, loading: prodLoading } = useSelector((s) => s.products);
-  const { allOrders, loading: ordLoading } = useSelector((s) => s.orders);
-  const [section, setSection] = useState('Dashboard');
-  const [users, setUsers]     = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editId, setEditId]    = useState(null);
-  const [form, setForm]        = useState({ name: '', price: '', description: '', stock: '', image_url: '', category_id: '' });
-  const [formError, setFormError] = useState(null);
+const ROLES = ['admin', 'manager', 'sales', 'user'];
+const EMPTY = { name: '', email: '', password: '', role: 'sales' };
+
+const ROLE_META = {
+  admin:   { label: 'Admin',    color: '#EF4444', bg: 'rgba(239,68,68,0.12)',   glow: '#EF4444' },
+  manager: { label: 'Manager',  color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',  glow: '#F59E0B' },
+  sales:   { label: 'Sales',    color: '#10B981', bg: 'rgba(16,185,129,0.12)',  glow: '#10B981' },
+  user:    { label: 'User',     color: '#6366F1', bg: 'rgba(99,102,241,0.12)',  glow: '#6366F1' },
+};
+
+const STAT_CARDS = [
+  { key: 'total_users',      label: 'Jami foydalanuvchilar', icon: '👥', color: '#38BDF8' },
+  { key: 'active_users',     label: 'Faol foydalanuvchilar', icon: '✅', color: '#10B981' },
+  { key: 'total_contacts',   label: 'Kontaktlar',             icon: '📇', color: '#8B5CF6' },
+  { key: 'total_leads',      label: 'Jami leadlar',           icon: '⚡', color: '#F59E0B' },
+  { key: 'open_leads',       label: 'Ochiq leadlar',          icon: '🎯', color: '#185FA5' },
+  { key: 'won_deals',        label: 'Yutilgan bitimlar',      icon: '🏆', color: '#10B981' },
+  { key: 'total_tasks',      label: 'Jami vazifalar',         icon: '📋', color: '#8B5CF6' },
+  { key: 'pending_tasks',    label: 'Kutayotgan vazifalar',   icon: '⏳', color: '#EF4444' },
+  { key: 'total_activities', label: 'Faoliyatlar',            icon: '📈', color: '#38BDF8' },
+];
+
+/* ── small reusable ──────────────────────────────────────────── */
+function RoleBadge({ role }) {
+  const m = ROLE_META[role] || { label: role, color: '#888', bg: 'rgba(136,136,136,0.12)' };
+  return (
+    <span style={{
+      padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+      color: m.color, background: m.bg, border: `1px solid ${m.color}33`,
+      letterSpacing: '.04em',
+    }}>{m.label}</span>
+  );
+}
+
+function ActionBtn({ onClick, color, hoverBg, icon, label }) {
+  return (
+    <button onClick={onClick} title={label} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '5px 10px', borderRadius: 8, border: 'none',
+      background: 'rgba(255,255,255,0.04)', color,
+      fontSize: 11, fontWeight: 600, cursor: 'pointer',
+      transition: 'all .15s',
+    }}
+      onMouseEnter={e => { e.currentTarget.style.background = hoverBg; }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+    >
+      {icon}{label}
+    </button>
+  );
+}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+function UserModal({ open, onClose, editUser, onSaved }) {
+  const [form, setForm]     = useState(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [error, setError]   = useState('');
+  const [showPw, setShowPw] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchProducts());
-    dispatch(fetchCategories());
-    dispatch(fetchAllOrders());
-  }, [dispatch]);
+    if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setForm(editUser ? { name: editUser.name || '', email: editUser.email, password: '', role: editUser.role } : EMPTY);
+    setError(''); setShowPw(false);
+  }, [open, editUser]);
 
-  useEffect(() => {
-    if (section === 'Users') {
-      api.get('/admin/users').then(res => {
-        const data = res.data?.data ?? res.data;
-        setUsers(Array.isArray(data) ? data : data?.users || []);
-      }).catch(() => {});
-    }
-  }, [section]);
+  const up = f => e => setForm(p => ({ ...p, [f]: e.target.value }));
 
-  const totalRevenue = allOrders
-    .filter(o => o.status !== 'cancelled')
-    .reduce((s, o) => s + Number(o.totalAmount || o.total_amount || 0), 0);
-
-  const handleProductSubmit = async (e) => {
-    e.preventDefault();
-    setFormError(null);
-    const data = { ...form, price: parseFloat(form.price), stock: parseInt(form.stock) || 0, category_id: parseInt(form.category_id) || null };
+  const handleSave = async (e) => {
+    e.preventDefault(); setSaving(true); setError('');
     try {
-      if (editId) {
-        await dispatch(updateProduct({ id: editId, data })).unwrap();
-      } else {
-        await dispatch(createProduct(data)).unwrap();
-      }
-      setShowForm(false); setEditId(null);
-      setForm({ name: '', price: '', description: '', stock: '', image_url: '', category_id: '' });
+      const body = { ...form };
+      if (editUser && !body.password) delete body.password;
+      if (editUser) await api.put(`/admin/users/${editUser.id}`, body);
+      else          await api.post('/admin/users', body);
+      onSaved(); onClose();
     } catch (err) {
-      setFormError(err?.message || 'Failed to save product');
+      setError(err.response?.data?.message || 'Xato yuz berdi');
     }
+    setSaving(false);
   };
 
-  const startEdit = (p) => {
-    setForm({ name: p.name, price: String(p.price), description: p.description || '', stock: String(p.stock), image_url: p.image_url || '', category_id: String(p.category_id || '') });
-    setEditId(p.id); setShowForm(true);
-  };
+  if (!open) return null;
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this product?')) return;
-    dispatch(deleteProduct(id));
-  };
-
-  const handleStatusChange = (orderId, status) => {
-    dispatch(updateOrderStatus({ orderId, status }));
-  };
-
-  const STATUS_COLORS = {
-    pending: '#fef3c7', processing: '#dbeafe', shipped: '#d1fae5', delivered: '#f0fdf4', cancelled: '#fee2e2'
+  const inp = {
+    width: '100%', padding: '10px 14px', borderRadius: 10, fontSize: 13,
+    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+    color: '#fff', outline: 'none', transition: 'border-color .2s', boxSizing: 'border-box',
   };
 
   return (
-    <div style={{ paddingTop: 64, minHeight: '100vh', background: '#f5f2ee', fontFamily: 'Jost, sans-serif' }}>
-      <div className="flex h-screen pt-16" style={{ height: 'calc(100vh - 64px)' }}>
-        {/* Sidebar */}
-        <aside className="w-56 bg-[#0a0a0a] flex-shrink-0 overflow-y-auto">
-          <div className="p-6">
-            <p className="text-xs text-white/40 font-semibold tracking-widest uppercase mb-6">Admin Panel</p>
-            <nav className="space-y-1">
-              {SECTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSection(s)}
-                  className={`sidebar-link w-full text-left ${section === s ? 'active' : ''}`}
-                  style={{
-                    color: section === s ? '#c9a84c' : 'rgba(255,255,255,0.45)',
-                    borderLeftColor: section === s ? '#c9a84c' : 'transparent',
-                    background: section === s ? 'rgba(201,168,76,0.08)' : 'transparent',
-                  }}
-                >
-                  {s === 'Dashboard' ? <FaChartBar /> : s === 'Products' ? <FaTshirt /> : s === 'Orders' ? <FaBoxOpen /> : <FaUsers />} {s}
-                </button>
-              ))}
-            </nav>
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 999, display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)',
+    }} onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{
+        width: '100%', maxWidth: 440, margin: '0 16px',
+        background: 'linear-gradient(145deg, #1E293B 0%, #0F172A 100%)',
+        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20,
+        boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+        overflow: 'hidden',
+      }}>
+        {/* header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px 24px 18px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          background: 'linear-gradient(135deg, rgba(24,95,165,0.15) 0%, transparent 100%)',
+        }}>
+          <div>
+            <h2 style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 2 }}>
+              {editUser ? 'Foydalanuvchini tahrirlash' : 'Yangi foydalanuvchi'}
+            </h2>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+              {editUser ? `ID: #${editUser.id}` : "CRM tizimiga qo'shish"}
+            </p>
           </div>
-        </aside>
+          <button onClick={onClose} style={{
+            width: 32, height: 32, borderRadius: 8, border: 'none',
+            background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.5)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all .15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(239,68,68,0.2)'; e.currentTarget.style.color='#EF4444'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.07)'; e.currentTarget.style.color='rgba(255,255,255,0.5)'; }}
+          ><Ico.X /></button>
+        </div>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-8">
-          {/* ── DASHBOARD ── */}
-          {section === 'Dashboard' && (
+        {/* avatar preview */}
+        {(form.name || editUser) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 24px 0' }}>
+            <Avatar name={form.name || editUser?.email} size="lg" />
             <div>
-              <SectionHeader title="Dashboard Overview" />
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                <StatCard title="Total Products" value={products.length} icon={<FaTshirt />} color="#c9a84c" />
-                <StatCard title="Total Orders"   value={allOrders.length} icon={<FaBoxOpen />} color="#3b82f6" />
-                <StatCard title="Total Users"    value={users.length || '—'} icon={<FaUsers />} color="#10b981" />
-                <StatCard title="Revenue"        value={`$${totalRevenue.toFixed(0)}`} icon={<FaMoneyBillWave />} color="#8b5cf6" />
-              </div>
-
-              {/* Recent orders */}
-              <h3 className="text-sm font-semibold tracking-widest uppercase mb-4 text-[#9e9589]">Recent Orders</h3>
-              <div className="bg-white overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#ece9e3]">
-                      {['Invoice', 'Customer', 'Amount', 'Status', 'Date'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold tracking-widest uppercase text-[#9e9589]">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allOrders.slice(0, 8).map((o) => (
-                      <tr key={o.id} className="border-b border-[#f5f2ee] hover:bg-[#f9f8f6]">
-                        <td className="px-4 py-3 font-medium text-xs">{o.invoice_number || `#${o.id}`}</td>
-                        <td className="px-4 py-3">{o.customer?.name || '—'}</td>
-                        <td className="px-4 py-3 font-semibold">${Number(o.totalAmount || o.total_amount).toFixed(2)}</td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs font-semibold px-2 py-1 rounded-sm"
-                            style={{ background: STATUS_COLORS[o.status] || '#f5f5f5' }}>
-                            {o.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-[#9e9589] text-xs">
-                          {new Date(o.createdAt || o.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>{form.name || '—'}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{form.email || '—'}</div>
             </div>
+          </div>
+        )}
+
+        {/* form */}
+        <form onSubmit={handleSave} style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {error && (
+            <div style={{
+              padding: '10px 14px', borderRadius: 10, fontSize: 12, color: '#FCA5A5',
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)',
+            }}>{error}</div>
           )}
 
-          {/* ── PRODUCTS ── */}
-          {section === 'Products' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <SectionHeader
-                title="Product Management"
-                action={
-                  <button
-                    onClick={() => { setShowForm(!showForm); setEditId(null); setForm({ name: '', price: '', description: '', stock: '', image_url: '', category_id: '' }); }}
-                    className="btn-primary"
-                    style={{ padding: '10px 20px', fontSize: 11 }}
-                  >
-                    {showForm ? '✕ Cancel' : '+ Add Product'}
-                  </button>
-                }
-              />
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 6, letterSpacing: '.06em', textTransform: 'uppercase' }}>To'liq ism</label>
+              <input value={form.name} onChange={up('name')} placeholder="Jasur Karimov" style={inp}
+                onFocus={e => e.target.style.borderColor='#185FA5'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.1)'} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 6, letterSpacing: '.06em', textTransform: 'uppercase' }}>Email *</label>
+              <input required type="email" value={form.email} onChange={up('email')} placeholder="user@nexora.uz" style={inp}
+                onFocus={e => e.target.style.borderColor='#185FA5'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.1)'} />
+            </div>
+          </div>
 
-              {/* Product form */}
-              {showForm && (
-                <form onSubmit={handleProductSubmit} className="bg-white p-8 mb-8 animate-fadeUp">
-                  <h3 className="text-sm font-semibold tracking-widest uppercase mb-6">
-                    {editId ? 'Edit Product' : 'New Product'}
-                  </h3>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">Name *</label>
-                      <input required className="input-fashion" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Product name" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">Price *</label>
-                      <input required type="number" step="0.01" min="0" className="input-fashion" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="99.99" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">Stock</label>
-                      <input type="number" min="0" className="input-fashion" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} placeholder="0" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">Category</label>
-                      <select className="input-fashion" value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })}>
-                        <option value="">— Select —</option>
-                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                      </select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">Image URL</label>
-                      <input className="input-fashion" value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="https://..." />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-semibold tracking-widest uppercase text-[#9e9589] mb-2">Description</label>
-                      <textarea rows={3} className="input-fashion resize-none" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Product description…" />
-                    </div>
-                  </div>
-                  {formError && <p className="text-red-500 text-xs mt-3">{formError}</p>}
-                  <div className="flex gap-3 mt-6">
-                    <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>
-                      {editId ? 'Update Product' : 'Create Product'}
-                    </button>
-                    <button type="button" onClick={() => { setShowForm(false); setEditId(null); }} className="btn-outline" style={{ padding: '10px 24px' }}>
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 6, letterSpacing: '.06em', textTransform: 'uppercase' }}>
+              Parol {editUser && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(bo'sh qolsa o'zgarmaydi)</span>}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input type={showPw ? 'text' : 'password'} value={form.password} onChange={up('password')}
+                required={!editUser} placeholder={editUser ? '••••••' : 'Kamida 6 belgi'}
+                style={{ ...inp, paddingRight: 40 }}
+                onFocus={e => e.target.style.borderColor='#185FA5'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.1)'} />
+              <button type="button" onClick={() => setShowPw(v => !v)} style={{
+                position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer',
+                display: 'flex', padding: 0,
+              }}>
+                {showPw ? <Ico.EyeOff /> : <Ico.Eye />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 6, letterSpacing: '.06em', textTransform: 'uppercase' }}>Rol</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+              {ROLES.map(r => {
+                const m = ROLE_META[r];
+                const sel = form.role === r;
+                return (
+                  <button key={r} type="button" onClick={() => setForm(p => ({ ...p, role: r }))} style={{
+                    padding: '8px 4px', borderRadius: 10, border: `1.5px solid ${sel ? m.color : 'rgba(255,255,255,0.08)'}`,
+                    background: sel ? m.bg : 'transparent',
+                    color: sel ? m.color : 'rgba(255,255,255,0.4)',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s',
+                    boxShadow: sel ? `0 0 12px ${m.color}33` : 'none',
+                  }}>{m.label}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: '11px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)',
+              background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', transition: 'all .15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='#fff'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='rgba(255,255,255,0.5)'; }}
+            >Bekor</button>
+            <button type="submit" disabled={saving} style={{
+              flex: 1, padding: '11px', borderRadius: 12, border: 'none',
+              background: saving ? 'rgba(24,95,165,0.5)' : 'linear-gradient(135deg, #185FA5 0%, #3B82F6 100%)',
+              color: '#fff', fontSize: 13, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+              transition: 'all .15s', boxShadow: saving ? 'none' : '0 4px 14px rgba(24,95,165,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              {saving ? (
+                <><span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin .7s linear infinite', display: 'inline-block' }} />Saqlanmoqda…</>
+              ) : (
+                <><Ico.Check />{editUser ? 'Saqlash' : 'Yaratish'}</>
               )}
-
-              {/* Products table */}
-              <div className="bg-white overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#ece9e3]">
-                      {['Image', 'Name', 'Category', 'Price', 'Stock', 'Actions'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold tracking-widest uppercase text-[#9e9589]">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((p) => (
-                      <tr key={p.id} className="border-b border-[#f5f2ee] hover:bg-[#f9f8f6]">
-                        <td className="px-4 py-3">
-                          <div className="w-12 h-14 bg-[#ece9e3] overflow-hidden">
-                            <img src={p.image_url || 'https://via.placeholder.com/48'} alt={p.name} className="w-full h-full object-cover" />
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 font-medium max-w-xs">
-                          <p className="truncate" style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 15 }}>{p.name}</p>
-                        </td>
-                        <td className="px-4 py-3 text-[#9e9589] text-xs">{p.category_name || '—'}</td>
-                        <td className="px-4 py-3 font-semibold">${Number(p.price).toFixed(2)}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs font-semibold ${p.stock === 0 ? 'text-red-500' : p.stock <= 5 ? 'text-amber-500' : 'text-green-600'}`}>
-                            {p.stock}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            <button onClick={() => startEdit(p)} className="text-xs underline text-[#3d3b39] hover:text-[#0a0a0a]">Edit</button>
-                            <button onClick={() => handleDelete(p.id)} className="text-xs underline text-red-400 hover:text-red-600">Delete</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {prodLoading && <div className="text-center py-8 text-[#9e9589] text-sm">Loading…</div>}
-                {!prodLoading && products.length === 0 && (
-                  <div className="text-center py-12 text-[#9e9589] text-sm">No products yet.</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── ORDERS ── */}
-          {section === 'Orders' && (
-            <div>
-              <SectionHeader title="Order Management" />
-              <div className="bg-white overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#ece9e3]">
-                      {['Invoice', 'Customer', 'Items', 'Total', 'Payment', 'Status', 'Date', 'Action'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold tracking-widest uppercase text-[#9e9589]">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allOrders.map((o) => {
-                      const items = typeof o.items === 'string' ? JSON.parse(o.items || '[]') : (o.items || []);
-                      return (
-                        <tr key={o.id} className="border-b border-[#f5f2ee] hover:bg-[#f9f8f6]">
-                          <td className="px-4 py-3 text-xs font-medium">{o.invoice_number || `#${o.id}`}</td>
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-xs">{o.customer?.name || '—'}</p>
-                            <p className="text-[10px] text-[#9e9589]">{o.customer?.email}</p>
-                          </td>
-                          <td className="px-4 py-3 text-xs">{items.length} item{items.length !== 1 ? 's' : ''}</td>
-                          <td className="px-4 py-3 font-semibold">${Number(o.totalAmount || o.total_amount).toFixed(2)}</td>
-                          <td className="px-4 py-3 text-xs capitalize">{o.paymentStatus || o.payment_status}</td>
-                          <td className="px-4 py-3">
-                            <span className="text-xs font-semibold px-2 py-1 rounded-sm"
-                              style={{ background: STATUS_COLORS[o.status] || '#f5f5f5' }}>
-                              {o.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-xs text-[#9e9589]">
-                            {new Date(o.createdAt || o.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={o.status}
-                              onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                              className="text-xs border border-[#d1ccc6] bg-transparent px-2 py-1 outline-none"
-                            >
-                              {STATUS_OPTS.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {ordLoading && <div className="text-center py-8 text-[#9e9589] text-sm">Loading…</div>}
-                {!ordLoading && allOrders.length === 0 && (
-                  <div className="text-center py-12 text-[#9e9589] text-sm">No orders yet.</div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ── USERS ── */}
-          {section === 'Users' && (
-            <div>
-              <SectionHeader title="User Management" />
-              <div className="bg-white overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#ece9e3]">
-                      {['#', 'Name', 'Email', 'Role', 'Joined', 'Status'].map(h => (
-                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold tracking-widest uppercase text-[#9e9589]">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id} className="border-b border-[#f5f2ee] hover:bg-[#f9f8f6]">
-                        <td className="px-4 py-3 text-[#9e9589] text-xs">{u.id}</td>
-                        <td className="px-4 py-3 font-medium">{u.name || '—'}</td>
-                        <td className="px-4 py-3 text-[#9e9589] text-xs">{u.email}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs font-semibold px-2 py-1 rounded-sm ${u.role === 'admin' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-700'}`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-[#9e9589]">
-                          {u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs font-semibold ${u.is_active ? 'text-green-600' : 'text-red-500'}`}>
-                            {u.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {users.length === 0 && (
-                  <div className="text-center py-12 text-[#9e9589] text-sm">Loading users…</div>
-                )}
-              </div>
-            </div>
-          )}
-        </main>
+            </button>
+          </div>
+        </form>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     </div>
   );
+}
 
+/* ── Main ────────────────────────────────────────────────────── */
+export default function Admin() {
+  const [tab,      setTab]      = useState('users');
+  const [users,    setUsers]    = useState([]);
+  const [stats,    setStats]    = useState(null);
+  const [meta,     setMeta]     = useState({ page: 1, total: 0, pages: 1 });
+  const [page,     setPage]     = useState(1);
+  const [search,   setSearch]   = useState('');
+  const [roleF,    setRoleF]    = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [modal,    setModal]    = useState(false);
+  const [editUser, setEditUser] = useState(null);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/admin/users', { params: { q: search, role: roleF, page, per_page: 15 } });
+      setUsers(res.data.data); setMeta(res.data.meta);
+    } catch { /* ignore */ }
+    setLoading(false);
+  };
+
+  const loadStats = async () => {
+    try { const res = await api.get('/admin/stats'); setStats(res.data.data); } catch { /* ignore */ }
+  };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadUsers(); }, [search, roleF, page]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { loadStats(); }, []);
+
+  const openCreate = () => { setEditUser(null); setModal(true); };
+  const openEdit   = u  => { setEditUser(u);    setModal(true); };
+
+  const handleBlock = async (u) => {
+    if (!window.confirm(`"${u.name || u.email}" ni ${u.is_active ? 'bloklash' : 'aktiv qilish'}?`)) return;
+    await api.patch(`/admin/users/${u.id}/block`, { block: u.is_active });
+    loadUsers();
+  };
+
+  const handleDelete = async (u) => {
+    if (!window.confirm(`"${u.name || u.email}" ni o'chirmoqchimisiz?`)) return;
+    try { await api.delete(`/admin/users/${u.id}`); loadUsers(); }
+    catch (err) { alert(err.response?.data?.message || 'Xato'); }
+  };
+
+  const TABS = [
+    { key: 'users', label: 'Foydalanuvchilar', icon: <Ico.Users /> },
+    { key: 'stats', label: 'Statistika',        icon: <Ico.Stats /> },
+    { key: 'audit', label: 'Audit log',          icon: <Ico.Audit /> },
+  ];
+
+  return (
+    <div style={{ fontFamily: "'Inter',system-ui,sans-serif" }}>
+
+      {/* Page header */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(24,95,165,0.12) 0%, rgba(139,92,246,0.06) 100%)',
+        border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20,
+        padding: '24px 28px', marginBottom: 24, position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: -20, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(24,95,165,0.15)', filter: 'blur(40px)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: 'var(--tw-prose-body,#fff)', letterSpacing: '-.02em', marginBottom: 4 }}
+              className="text-gray-900 dark:text-white">
+              Boshqaruv paneli
+            </h1>
+            <p style={{ fontSize: 13 }} className="text-gray-400 dark:text-white/35">
+              Foydalanuvchilar va tizim sozlamalari
+            </p>
+          </div>
+          {stats && (
+            <div style={{ display: 'flex', gap: 16 }}>
+              {[
+                { v: stats.total_users,   l: 'Foydalanuvchi', c: '#38BDF8' },
+                { v: stats.active_users,  l: 'Faol',          c: '#10B981' },
+                { v: stats.total_leads,   l: 'Lead',          c: '#F59E0B' },
+              ].map((s, i) => (
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: s.c }}>{s.v ?? '—'}</div>
+                  <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase' }} className="text-gray-400 dark:text-white/35">{s.l}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, padding: '4px', borderRadius: 14 }}
+        className="bg-gray-100 dark:bg-white/[0.04]">
+        {TABS.map(({ key, label, icon }) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            padding: '9px 16px', borderRadius: 10, border: 'none', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', transition: 'all .2s',
+            background: tab === key ? (document.documentElement.classList.contains('dark') ? '#185FA5' : '#fff') : 'transparent',
+            color: tab === key ? (document.documentElement.classList.contains('dark') ? '#fff' : '#185FA5') : undefined,
+            boxShadow: tab === key ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+          }}
+            className={tab === key ? '' : 'text-gray-400 dark:text-white/35 hover:text-gray-600 dark:hover:text-white/60'}
+          >
+            {icon}{label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Users tab ──────────────────────────────────────── */}
+      {tab === 'users' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* toolbar */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 260 }}>
+              <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+                className="text-gray-400 dark:text-white/30">
+                <Ico.Search />
+              </span>
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Ism yoki email…"
+                className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-gray-700 dark:text-white/80 outline-none focus:border-[#185FA5] transition-colors"
+                style={{ paddingLeft: 34 }} />
+            </div>
+
+            <select value={roleF} onChange={e => { setRoleF(e.target.value); setPage(1); }}
+              className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/[0.04] text-gray-700 dark:text-white/80 outline-none">
+              <option value="">Barcha rol</option>
+              {ROLES.map(r => <option key={r} value={r}>{ROLE_META[r].label}</option>)}
+            </select>
+
+            <button onClick={openCreate} style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7,
+              padding: '9px 18px', borderRadius: 12, border: 'none',
+              background: 'linear-gradient(135deg, #185FA5 0%, #3B82F6 100%)',
+              color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+              boxShadow: '0 4px 14px rgba(24,95,165,0.4)', transition: 'opacity .2s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.opacity='.88'}
+              onMouseLeave={e => e.currentTarget.style.opacity='1'}
+            >
+              <Ico.Plus />Yangi foydalanuvchi
+            </button>
+          </div>
+
+          {/* table card */}
+          <div className="bg-white dark:bg-[#1E293B]/80" style={{
+            borderRadius: 20, overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.07)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+            backdropFilter: 'blur(12px)',
+          }}>
+            {loading && users.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)', animation: 'pulse 1.5s ease-in-out infinite',
+                    animationDelay: `${i * 0.1}s` }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%' }} className="bg-gray-100 dark:bg-white/10" />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ height: 12, borderRadius: 6, width: '40%' }} className="bg-gray-100 dark:bg-white/10" />
+                      <div style={{ height: 10, borderRadius: 6, width: '25%' }} className="bg-gray-100 dark:bg-white/[0.06]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : users.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 24px' }}
+                className="text-gray-400 dark:text-white/30">
+                <div style={{ fontSize: 36, marginBottom: 12 }}>👤</div>
+                <p style={{ fontSize: 14 }}>Foydalanuvchi topilmadi</p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      {['Foydalanuvchi','Rol','Holat','Qo\'shildi','Amallar'].map((h, i) => (
+                        <th key={i} style={{
+                          padding: '12px 16px', textAlign: i === 4 ? 'right' : 'left',
+                          fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+                        }} className="text-gray-400 dark:text-white/25">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u, idx) => (
+                      <tr key={u.id} style={{ borderBottom: idx < users.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', transition: 'background .15s' }}
+                        className="hover:bg-gray-50 dark:hover:bg-white/[0.025]">
+
+                        {/* User cell */}
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
+                              <Avatar name={u.name || u.email} url={u.avatar_url} size="md" />
+                              {u.is_active && (
+                                <span style={{
+                                  position: 'absolute', bottom: 0, right: 0,
+                                  width: 9, height: 9, borderRadius: '50%',
+                                  background: '#10B981', border: '2px solid #1E293B',
+                                }} />
+                              )}
+                            </div>
+                            <div>
+                              <p style={{ fontSize: 13, fontWeight: 600, marginBottom: 1 }}
+                                className="text-gray-800 dark:text-white/90">
+                                {u.name || <span className="text-gray-300 dark:text-white/20">—</span>}
+                              </p>
+                              <p style={{ fontSize: 11 }} className="text-gray-400 dark:text-white/30">{u.email}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Role */}
+                        <td style={{ padding: '12px 16px' }}><RoleBadge role={u.role} /></td>
+
+                        {/* Status */}
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '3px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
+                            background: u.is_active ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                            color: u.is_active ? '#10B981' : '#EF4444',
+                            border: `1px solid ${u.is_active ? '#10B98133' : '#EF444433'}`,
+                          }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                            {u.is_active ? 'Faol' : 'Bloklangan'}
+                          </span>
+                        </td>
+
+                        {/* Date */}
+                        <td style={{ padding: '12px 16px', fontSize: 11 }}
+                          className="text-gray-400 dark:text-white/25 hidden md:table-cell">
+                          {new Date(u.created_at).toLocaleDateString('uz-UZ')}
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                            <ActionBtn onClick={() => openEdit(u)}
+                              color="#38BDF8" hoverBg="rgba(56,189,248,0.12)"
+                              icon={<Ico.Edit />} label="Tahrir" />
+                            <ActionBtn
+                              onClick={() => handleBlock(u)}
+                              color={u.is_active ? '#F59E0B' : '#10B981'}
+                              hoverBg={u.is_active ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)'}
+                              icon={u.is_active ? <Ico.Block /> : <Ico.Unlock />}
+                              label={u.is_active ? 'Blok' : 'Aktiv'} />
+                            <ActionBtn onClick={() => handleDelete(u)}
+                              color="#EF4444" hoverBg="rgba(239,68,68,0.12)"
+                              icon={<Ico.Trash />} label="O'chirish" />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* pagination */}
+            {meta.pages > 1 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <span style={{ fontSize: 12 }} className="text-gray-400 dark:text-white/30">
+                  {meta.total} foydalanuvchi · {page}/{meta.pages} sahifa
+                </span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[...Array(Math.min(meta.pages, 5))].map((_, i) => {
+                    const p = i + 1;
+                    return (
+                      <button key={p} onClick={() => setPage(p)} style={{
+                        width: 30, height: 30, borderRadius: 8, border: 'none', fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', transition: 'all .15s',
+                        background: page === p ? 'linear-gradient(135deg,#185FA5,#3B82F6)' : 'rgba(255,255,255,0.05)',
+                        color: page === p ? '#fff' : undefined,
+                        boxShadow: page === p ? '0 2px 8px rgba(24,95,165,0.4)' : 'none',
+                      }} className={page === p ? '' : 'text-gray-500 dark:text-white/40'}>{p}</button>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button disabled={page<=1} onClick={() => setPage(p=>p-1)} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'none', cursor: page<=1 ? 'not-allowed' : 'pointer',
+                    opacity: page<=1 ? .3 : 1, transition: 'all .15s',
+                  }} className="text-gray-500 dark:text-white/40">
+                    <Ico.ChevLeft />
+                  </button>
+                  <button disabled={page>=meta.pages} onClick={() => setPage(p=>p+1)} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'none', cursor: page>=meta.pages ? 'not-allowed' : 'pointer',
+                    opacity: page>=meta.pages ? .3 : 1, transition: 'all .15s',
+                  }} className="text-gray-500 dark:text-white/40">
+                    <Ico.ChevRight />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Stats tab ──────────────────────────────────────── */}
+      {tab === 'stats' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
+          {STAT_CARDS.map(({ key, label, icon, color }) => (
+            <div key={key} style={{
+              borderRadius: 18, padding: '20px 22px', position: 'relative', overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.07)',
+              background: 'linear-gradient(145deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
+              backdropFilter: 'blur(12px)',
+              transition: 'transform .2s, box-shadow .2s',
+              cursor: 'default',
+            }}
+              className="bg-white dark:bg-transparent"
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow=`0 12px 30px ${color}22`; }}
+              onMouseLeave={e => { e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='none'; }}
+            >
+              <div style={{ position: 'absolute', top: -8, right: -8, fontSize: 48, opacity: .07 }}>{icon}</div>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>{icon}</div>
+              <div style={{ fontSize: 28, fontWeight: 900, color, letterSpacing: '-.02em', lineHeight: 1 }}>
+                {stats ? (stats[key] ?? 0) : '—'}
+              </div>
+              <div style={{ fontSize: 11, marginTop: 6, fontWeight: 600, letterSpacing: '.04em' }}
+                className="text-gray-500 dark:text-white/35">{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Audit tab ──────────────────────────────────────── */}
+      {tab === 'audit' && (
+        <div style={{
+          borderRadius: 20, padding: '60px 24px', textAlign: 'center',
+          border: '1px solid rgba(255,255,255,0.07)',
+          background: 'linear-gradient(145deg, rgba(255,255,255,0.03) 0%, transparent 100%)',
+        }}
+          className="bg-white dark:bg-transparent">
+          <div style={{ fontSize: 48, marginBottom: 16 }}>📋</div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}
+            className="text-gray-700 dark:text-white/60">Audit log</h3>
+          <p style={{ fontSize: 13 }} className="text-gray-400 dark:text-white/30">
+            Tizim harakatlari tarixi — tez orada qo'shiladi
+          </p>
+        </div>
+      )}
+
+      {/* Modal */}
+      <UserModal open={modal} onClose={() => setModal(false)} editUser={editUser} onSaved={loadUsers} />
+    </div>
+  );
 }
