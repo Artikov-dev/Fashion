@@ -20,6 +20,9 @@ from models.lead           import Lead
 from models.deal           import Deal
 from models.task           import Task
 from models.activity       import Activity
+from models.product        import Product, Category
+from models.cart           import Cart, CartItem
+from models.order          import Order
 
 migrate = Migrate()
 
@@ -81,9 +84,12 @@ def create_app(config_name='development'):
     from routes.activities import activities_bp
     from routes.analytics  import analytics_bp
     from routes.admin      import admin_bp
+    from routes.products   import products_bp
+    from routes.cart       import cart_bp
 
     for bp in [auth_bp, contacts_bp, leads_bp, deals_bp, tasks_bp,
-               pipeline_bp, activities_bp, analytics_bp, admin_bp]:
+               pipeline_bp, activities_bp, analytics_bp, admin_bp,
+               products_bp, cart_bp]:
         app.register_blueprint(bp)
 
     # Health endpoints

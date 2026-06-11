@@ -10,7 +10,7 @@ class TestRegister:
         assert data['success'] is True
         assert 'access_token' in data['data']
         assert data['data']['user']['email'] == 'new@test.com'
-        assert data['data']['user']['role'] == 'customer'
+        assert data['data']['user']['role'] == 'user'
 
     def test_register_duplicate_email(self, client):
         client.post('/api/auth/register', json={
