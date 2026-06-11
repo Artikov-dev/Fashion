@@ -307,12 +307,7 @@ def seed_all():
 
 
 def init_app(app):
-    @app.cli.command('seed-db')
-    def seed_command():
-        """Seed the database with CRM test data."""
-        with app.app_context():
-            db.create_all()
-            seed_all()
+  
 
     @app.before_request
     def auto_seed():

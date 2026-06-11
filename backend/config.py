@@ -7,12 +7,6 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_SQLITE_PATH = os.path.join(BASE_DIR, 'instance', 'nexora_crm.db')
 
 
-def _resolve_db_url():
-    url = os.environ.get('DATABASE_URL', '')
-    if url.startswith('postgres://'):
-        url = url.replace('postgres://', 'postgresql://', 1)
-    return url or f'sqlite:///{DEFAULT_SQLITE_PATH}'
-
 
 class Config:
     SECRET_KEY             = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(48)

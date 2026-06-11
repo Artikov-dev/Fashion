@@ -13,14 +13,11 @@ import {
 /* ─── CSS keyframes injected once ───────────────────────────────────────── */
 const STYLE = `
 @keyframes dropBounce {
-  0%   { opacity: 0; transform: translateY(-60px); }
-  55%  { opacity: 1; transform: translateY(12px);  }
-  75%  { transform: translateY(-6px); }
-  90%  { transform: translateY(4px);  }
+  0%   { opacity: 0; transform: translateY(-16px); }
   100% { opacity: 1; transform: translateY(0);    }
 }
 @keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0);   }
 }
 `;
@@ -45,7 +42,7 @@ function DropBounce({ delay = 0, children }) {
     <div
       style={{
         opacity:         go ? 1 : 0,
-        animation:       go ? `dropBounce 0.7s cubic-bezier(.36,.07,.19,.97) ${delay}ms both` : 'none',
+        animation:       go ? `dropBounce 0.3s ease-out ${delay}ms both` : 'none',
         animationFillMode: 'both',
       }}
     >
@@ -55,7 +52,7 @@ function DropBounce({ delay = 0, children }) {
 }
 
 /* ─── Animated counter (sayıyı animasiya bilan ko'rsatadi) ──────────────── */
-function AnimCounter({ value, suffix = '', decimals = 0, duration = 1000 }) {
+function AnimCounter({ value, suffix = '', decimals = 0, duration = 400 }) {
   const [display, setDisplay] = useState(0);
   const start = useRef(null);
   const raf   = useRef(null);
@@ -150,8 +147,8 @@ const CountTooltip = (props) => <CustomTooltip {...props} money={false} />;
 /* ─── Shared recharts animation props ───────────────────────────────────── */
 const ANIM = {
   isAnimationActive: true,
-  animationBegin:    200,
-  animationDuration: 1400,
+  animationBegin:    0,
+  animationDuration: 500,
   animationEasing:   'ease-out',
 };
 
@@ -176,13 +173,13 @@ function KpiStrip({ data }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
       {kpis.map(({ label, value, suffix, decimals, color }, i) => (
-        <DropBounce key={label} delay={i * 100}>
+        <DropBounce key={label} delay={i * 40}>
           <div className="bg-white dark:bg-[#1E293B] rounded-2xl p-4 border border-gray-100 dark:border-white/5 text-center"
             style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
             <p className="text-[11px] text-gray-400 dark:text-white/35 uppercase tracking-wider mb-1">{label}</p>
             <p className="text-xl font-bold" style={{ color }}>
               {value !== undefined && value !== null
-                ? <AnimCounter value={value} suffix={suffix} decimals={decimals} duration={1200} />
+                ? <AnimCounter value={value} suffix={suffix} decimals={decimals} duration={500} />
                 : '—'}
             </p>
           </div>
@@ -233,7 +230,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* AreaChart — chapdan o'ngga chiziladi */}
-        <ChartCard title="Daromad trendi (12 oy)" delay={100} badge="12 oy">
+        <ChartCard title="Daromad trendi (12 oy)" delay={0} badge="12 oy">
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={revenueTrend} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <defs>
@@ -262,7 +259,7 @@ export default function Analytics() {
         </ChartCard>
 
         {/* BarChart — pastdan yuqoriga o'sadi */}
-        <ChartCard title="Daromad bashorati (3 oy)" delay={200} badge="Bashorat">
+        <ChartCard title="Daromad bashorati (3 oy)" delay={50} badge="Bashorat">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={revenueForecast} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.4} />
@@ -286,7 +283,7 @@ export default function Analytics() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {/* Horizontal BarChart */}
-        <ChartCard title="Leadlar bosqich bo'yicha" className="lg:col-span-2" delay={300}>
+        <ChartCard title="Leadlar bosqich bo'yicha" className="lg:col-span-2" delay={100}>
           <ResponsiveContainer width="100%" height={210}>
             <BarChart
               data={leadsByStage}
@@ -321,7 +318,7 @@ export default function Analytics() {
         </ChartCard>
 
         {/* PieChart — 0°dan 360°ga to'ladi, hover da sektor +8px */}
-        <ChartCard title="Lead funnel" delay={400}>
+        <ChartCard title="Lead funnel" delay={150}>
           <ResponsiveContainer width="100%" height={210}>
             <PieChart>
               <Pie
@@ -360,7 +357,7 @@ export default function Analytics() {
       </div>
 
       {/* ── Row 3: LineChart ────────────────────────────────────────────── */}
-      <ChartCard title="Kontaktlar o'sishi (12 oy)" delay={500}>
+      <ChartCard title="Kontaktlar o'sishi (12 oy)" delay={200}>
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={contactsGrowth} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <defs>
@@ -389,7 +386,7 @@ export default function Analytics() {
 
       {/* ── Team performance table ───────────────────────────────────────── */}
       {teamPerformance.length > 0 && (
-        <DropBounce delay={600}>
+        <DropBounce delay={250}>
           <div
             className="bg-white dark:bg-[#1E293B] rounded-2xl border border-gray-100 dark:border-white/5 overflow-hidden"
             style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
@@ -420,7 +417,7 @@ export default function Analytics() {
                       key={u.user_id}
                       className="hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                       style={{
-                        animation: `countUp 0.4s ease ${i * 80 + 700}ms both`,
+                        animation: `countUp 0.25s ease ${i * 30 + 200}ms both`,
                       }}
                     >
                       <td className="px-5 py-3 text-xs font-bold text-gray-400 dark:text-white/25">
