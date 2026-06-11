@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts, fetchCategories } from '../slices/productsSlice';
+// eslint-disable-next-line no-unused-vars
 import { addToCart } from '../features/cart/cartSlice';
 import ProductCard from '../components/ProductCard';
 import Toast, { useToast } from '../components/Toast';
@@ -44,7 +45,7 @@ export default function Home() {
             Own<br />The Look
           </h1>
           <p className="text-base text-white/70 mb-8 max-w-md leading-relaxed">
-            Discover bold new silhouettes and timeless essentials — freshly curated for 2026.
+            Discovereeeerrrrrr bold new silhouettes and timeless essentials — freshly curated for 2026.
           </p>
           <div className="flex gap-4 flex-wrap">
             <Link to="/products" className="btn-primary">Shop Collection</Link>

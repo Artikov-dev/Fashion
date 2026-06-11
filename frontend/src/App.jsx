@@ -67,7 +67,7 @@ function AnimatedRoutes({ user }) {
             <h1 style={{ fontSize: 120, fontWeight: 300, color: '#d1ccc6', lineHeight: 1 }}>404</h1>
             <p style={{ fontFamily: 'Jost, sans-serif', fontSize: 14, color: '#9e9589', marginBottom: 32 }}>This page doesn't exist.</p>
             <a href="/" className="btn-primary" style={{ textDecoration: 'none', padding: '12px 28px', background: '#0a0a0a', color: '#fff', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', fontFamily: 'Jost, sans-serif' }}>
-              Go Home
+              Go Homeeee
             </a>
           </motion.div>
         } />
