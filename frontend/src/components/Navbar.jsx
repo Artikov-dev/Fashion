@@ -44,7 +44,7 @@ export default function Navbar() {
             className="font-serif text-2xl font-light tracking-[0.15em] hover:opacity-70 transition-opacity"
             style={{ fontFamily: 'Cormorant Garamond, serif', textDecoration: 'none' }}
           >
-            VÊTEMENT
+     NEXORA
           </Link>
 
           {/* Desktop Nav */}

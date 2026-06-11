@@ -1,19 +1,21 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer      from '../slices/authSlice';
-import contactsReducer  from '../slices/contactsSlice';
-import leadsReducer     from '../slices/leadsSlice';
-import tasksReducer     from '../slices/tasksSlice';
-import analyticsReducer from '../slices/analyticsSlice';
-import uiReducer        from '../slices/uiSlice';
+import authReducer          from '../slices/authSlice';
+import contactsReducer      from '../slices/contactsSlice';
+import leadsReducer         from '../slices/leadsSlice';
+import tasksReducer         from '../slices/tasksSlice';
+import analyticsReducer     from '../slices/analyticsSlice';
+import uiReducer            from '../slices/uiSlice';
+import notificationsReducer from '../slices/notificationsSlice';
 
 export const store = configureStore({
   reducer: {
-    auth:      authReducer,
-    contacts:  contactsReducer,
-    leads:     leadsReducer,
-    tasks:     tasksReducer,
-    analytics: analyticsReducer,
-    ui:        uiReducer,
+    auth:          authReducer,
+    contacts:      contactsReducer,
+    leads:         leadsReducer,
+    tasks:         tasksReducer,
+    analytics:     analyticsReducer,
+    ui:            uiReducer,
+    notifications: notificationsReducer,
   },
   preloadedState: {
     auth: {

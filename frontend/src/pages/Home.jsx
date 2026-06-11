@@ -216,7 +216,7 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8 mb-10">
             <div>
               <h3 className="text-white text-xl font-light tracking-widest mb-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-                VÊTEMENT
+             NEXORA 
               </h3>
               <p className="text-xs text-white/40 leading-relaxed">
                 Premium fashion for the modern individual. Curated with care, delivered with love.
