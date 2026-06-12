@@ -2,6 +2,32 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { loginUser, registerUser, clearMessages } from '../slices/authSlice';
+import { Users2, GitMerge, BarChart2 } from 'lucide-react';
+
+function NexoraLogo({ size = 48 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="gold-grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#F5D27A"/>
+          <stop offset="50%" stopColor="#C9A84C"/>
+          <stop offset="100%" stopColor="#A07830"/>
+        </linearGradient>
+        <linearGradient id="gold-stroke" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#F5D27A"/>
+          <stop offset="100%" stopColor="#C9A84C"/>
+        </linearGradient>
+      </defs>
+      {/* Outer thin border ring */}
+      <rect x="3" y="3" width="94" height="94" rx="20" stroke="url(#gold-grad)" strokeWidth="1" fill="none" opacity="0.4"/>
+      {/* N letter */}
+      <path
+        d="M26 76V24h7l34 38V24h7v52h-7L33 38v38H26z"
+        fill="url(#gold-stroke)"
+      />
+    </svg>
+  );
+}
 
 export default function Auth() {
   const dispatch  = useDispatch();
@@ -45,21 +71,22 @@ export default function Auth() {
       {/* Left: branding panel */}
       <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center bg-[#0F172A] p-12">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#185FA5] flex items-center justify-center text-white text-3xl font-bold mx-auto mb-6">
-            N
+          <div className="flex flex-col items-center mb-6 gap-3">
+            <NexoraLogo size={72} />
+            <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 28, fontWeight: 300, letterSpacing: '0.2em', color: '#fff' }}>NEXORA</span>
           </div>
-          <h2 className="text-4xl font-bold text-white tracking-wide mb-3">NEXORA CRM</h2>
-          <p className="text-white/50 text-sm max-w-xs leading-relaxed">
+          <p className="text-[#C9A84C] text-xs font-semibold tracking-widest uppercase mb-4">CRM Platform</p>
+          <p className="text-white/50 text-sm max-w-xs leading-relaxed mx-auto">
             Mijozlaringizni boshqaring, leadlarni kuzating va biznesingizni o'stirish uchun zamonaviy CRM tizimi.
           </p>
-          <div className="mt-10 grid grid-cols-3 gap-6 text-center">
+          <div className="mt-10 grid grid-cols-3 gap-4 text-center">
             {[
-              { icon: '◎', label: 'Kontaktlar' },
-              { icon: '◈', label: 'Pipeline' },
-              { icon: '▲', label: 'Analitika' },
+              { icon: <Users2 size={22} strokeWidth={1.8} />, label: 'Kontaktlar' },
+              { icon: <GitMerge size={22} strokeWidth={1.8} />, label: 'Pipeline' },
+              { icon: <BarChart2 size={22} strokeWidth={1.8} />, label: 'Analitika' },
             ].map(({ icon, label }) => (
               <div key={label} className="bg-white/5 rounded-xl p-4">
-                <div className="text-2xl text-[#185FA5] mb-2">{icon}</div>
+                <div className="flex justify-center text-[#3B6EF8] mb-2">{icon}</div>
                 <p className="text-xs text-white/40 font-medium">{label}</p>
               </div>
             ))}
@@ -72,9 +99,10 @@ export default function Auth() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8 text-center">
-            <div className="w-12 h-12 rounded-xl bg-[#185FA5] flex items-center justify-center text-white text-xl font-bold mx-auto mb-3">N</div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-wide">NEXORA CRM</h1>
-            <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Tizimga kirish</p>
+            <div className="flex justify-center mb-3">
+              <NexoraLogo size={52} />
+            </div>
+            <p className="text-sm text-gray-400 dark:text-white/30 mt-1">Tizimga xush kelibsiz</p>
           </div>
 
           {/* Tab toggle */}

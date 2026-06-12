@@ -41,10 +41,27 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             to={user ? '/home' : '/auth'}
-            className="font-serif text-2xl font-light tracking-[0.15em] hover:opacity-70 transition-opacity"
-            style={{ fontFamily: 'Cormorant Garamond, serif', textDecoration: 'none' }}
+            className="hover:opacity-80 transition-opacity"
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}
           >
-     NEXORA
+            <svg width="36" height="36" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="nav-gold" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#F5D27A"/>
+                  <stop offset="50%" stopColor="#C9A84C"/>
+                  <stop offset="100%" stopColor="#A07830"/>
+                </linearGradient>
+              </defs>
+              <rect x="3" y="3" width="94" height="94" rx="20" stroke="url(#nav-gold)" strokeWidth="1.2" fill="none" opacity="0.5"/>
+              <path d="M26 76V24h7l34 38V24h7v52h-7L33 38v38H26z" fill="url(#nav-gold)"/>
+            </svg>
+            <span style={{
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: 22,
+              fontWeight: 400,
+              letterSpacing: '0.18em',
+              color: 'inherit',
+            }}>NEXORA</span>
           </Link>
 
           {/* Desktop Nav */}

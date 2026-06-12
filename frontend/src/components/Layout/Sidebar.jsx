@@ -52,17 +52,21 @@ export default function Sidebar() {
         justifyContent: collapsed ? 'center' : 'flex-start',
         flexShrink: 0,
       }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-          background: 'linear-gradient(135deg, #185FA5 0%, #3B82F6 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 12px rgba(24,95,165,0.5)',
-          fontSize: 15, fontWeight: 900, color: '#fff', letterSpacing: '-.03em',
-        }}>N</div>
+        <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+          <defs>
+            <linearGradient id="sb-gold" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#F5D27A"/>
+              <stop offset="50%" stopColor="#C9A84C"/>
+              <stop offset="100%" stopColor="#A07830"/>
+            </linearGradient>
+          </defs>
+          <rect x="3" y="3" width="94" height="94" rx="20" stroke="url(#sb-gold)" strokeWidth="1.2" fill="none" opacity="0.5"/>
+          <path d="M26 76V24h7l34 38V24h7v52h-7L33 38v38H26z" fill="url(#sb-gold)"/>
+        </svg>
         {!collapsed && (
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '.06em' }}>NEXORA</div>
-            <div style={{ fontSize: 9, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '.12em', marginTop: 1 }}>CRM PLATFORM</div>
+          <div style={{ lineHeight: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 300, color: '#fff', letterSpacing: '.14em', textTransform: 'uppercase', fontFamily: 'Cormorant Garamond, serif' }}>Nexora</div>
+            <div style={{ fontSize: 9, fontWeight: 500, color: 'rgba(201,168,76,0.6)', letterSpacing: '.12em', marginTop: 3, textTransform: 'uppercase' }}>CRM Platform</div>
           </div>
         )}
       </div>

@@ -215,9 +215,20 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-4 gap-8 mb-10">
             <div>
-              <h3 className="text-white text-xl font-light tracking-widest mb-4" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-             NEXORA 
-              </h3>
+              <div className="flex items-center gap-3 mb-4">
+                <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="foot-gold" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stopColor="#F5D27A"/>
+                      <stop offset="50%" stopColor="#C9A84C"/>
+                      <stop offset="100%" stopColor="#A07830"/>
+                    </linearGradient>
+                  </defs>
+                  <rect x="3" y="3" width="94" height="94" rx="20" stroke="url(#foot-gold)" strokeWidth="1.2" fill="none" opacity="0.5"/>
+                  <path d="M26 76V24h7l34 38V24h7v52h-7L33 38v38H26z" fill="url(#foot-gold)"/>
+                </svg>
+                <span style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 20, fontWeight: 400, letterSpacing: '0.18em', color: '#fff' }}>NEXORA</span>
+              </div>
               <p className="text-xs text-white/40 leading-relaxed">
                 Premium fashion for the modern individual. Curated with care, delivered with love.
               </p>
