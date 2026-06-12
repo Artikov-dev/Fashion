@@ -5,6 +5,7 @@ import {
   selectNotifications, selectUnread,
   markRead, markAllRead, removeNotification, clearAll,
 } from '../../slices/notificationsSlice';
+import { Bell, BellOff, X, Check, Trash2, ClipboardCheck } from 'lucide-react';
 
 /* ── helpers ─────────────────────────────────────────────── */
 function timeAgo(ms) {
@@ -28,37 +29,6 @@ const TYPE_BG = {
   warning: 'rgba(245,158,11,0.12)',
 };
 
-/* ── SVG icons ───────────────────────────────────────────── */
-const IcoBell = ({ hasUnread }) => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
-    stroke="currentColor" strokeWidth={hasUnread ? 2.2 : 2}
-    strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-  </svg>
-);
-const IcoX = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-const IcoCheck = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-const IcoTrash = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-    <path d="M10 11v6"/><path d="M14 11v6"/>
-  </svg>
-);
-const IcoTask = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-  </svg>
-);
 
 /* ── main component ──────────────────────────────────────── */
 export default function NotificationBell({ isDark }) {
@@ -168,7 +138,7 @@ export default function NotificationBell({ isDark }) {
         }}
         title="Bildirishnomalar"
       >
-        <IcoBell hasUnread={unread > 0} />
+        <Bell size={17} strokeWidth={unread > 0 ? 2.2 : 2} />
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: 6, right: 6,
@@ -215,7 +185,7 @@ export default function NotificationBell({ isDark }) {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>🔔</span>
+                <Bell size={16} strokeWidth={2} />
                 <span style={{
                   fontSize: 14, fontWeight: 800,
                   color: isDark ? '#fff' : '#111827',
@@ -239,7 +209,7 @@ export default function NotificationBell({ isDark }) {
                     onMouseEnter={e => e.currentTarget.style.background='rgba(16,185,129,0.22)'}
                     onMouseLeave={e => e.currentTarget.style.background='rgba(16,185,129,0.12)'}
                   >
-                    <IcoCheck />O'qildi
+                    <Check size={12} strokeWidth={2.5} />O'qildi
                   </button>
                 )}
                 {notifs.length > 0 && (
@@ -251,7 +221,7 @@ export default function NotificationBell({ isDark }) {
                     onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.2)'}
                     onMouseLeave={e => e.currentTarget.style.background='rgba(239,68,68,0.1)'}
                   >
-                    <IcoTrash />Tozalash
+                    <Trash2 size={12} strokeWidth={2} />Tozalash
                   </button>
                 )}
               </div>
@@ -279,7 +249,7 @@ export default function NotificationBell({ isDark }) {
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {visible.length === 0 ? (
               <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🔕</div>
+                <div style={{ fontSize: 40, marginBottom: 12, display: 'flex', justifyContent: 'center', color: isDark ? 'rgba(255,255,255,0.2)' : '#D1D5DB' }}><BellOff size={40} strokeWidth={1.5} /></div>
                 <p style={{ fontSize: 13, color: isDark ? 'rgba(255,255,255,0.3)' : '#9CA3AF' }}>
                   {filter === 'unread' ? "O'qilmagan bildirishnoma yo'q" : "Bildirishnoma yo'q"}
                 </p>
@@ -327,7 +297,7 @@ export default function NotificationBell({ isDark }) {
                     background: TYPE_BG[n.type] || 'rgba(255,255,255,0.06)',
                     border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.06)',
                   }}>
-                    {n.icon || (n.type === 'task' ? <IcoTask /> : '📌')}
+                    {n.type === 'task' ? <ClipboardCheck size={13} strokeWidth={2} /> : <Bell size={13} strokeWidth={2} />}
                   </div>
 
                   {/* Content */}
@@ -348,7 +318,7 @@ export default function NotificationBell({ isDark }) {
                         }}
                         onMouseEnter={e => e.currentTarget.style.color='#EF4444'}
                         onMouseLeave={e => e.currentTarget.style.color=isDark?'rgba(255,255,255,0.25)':'#D1D5DB'}
-                      ><IcoX /></button>
+                      ><X size={11} strokeWidth={2.5} /></button>
                     </div>
 
                     <p style={{

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   fetchRevenueTrend, fetchRevenueForecast, fetchLeadsByStage,
-  fetchFunnel, fetchTeamPerformance, fetchContactsGrowth,
+  fetchFunnel, fetchTeamPerformance, fetchContactsGrowth, fetchDashboard,
 } from '../slices/analyticsSlice';
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -206,7 +206,7 @@ export default function Analytics() {
     dispatch(fetchFunnel());
     dispatch(fetchTeamPerformance());
     dispatch(fetchContactsGrowth());
-    /* dashboard is loaded by Dashboard page but we might need it here too */
+    dispatch(fetchDashboard());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

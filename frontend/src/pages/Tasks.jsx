@@ -5,6 +5,7 @@ import {
   createTask, updateTaskStatus, deleteTask,
 } from '../slices/tasksSlice';
 import { fetchContacts } from '../slices/contactsSlice';
+import { selectGlobalSearch } from '../slices/uiSlice';
 import Badge    from '../components/UI/Badge';
 import Modal    from '../components/UI/Modal';
 import Skeleton from '../components/UI/Skeleton';
@@ -66,7 +67,11 @@ export default function Tasks() {
     dispatch(deleteTask(id));
   };
 
-  const displayItems = view === 'my' ? myTasks : view === 'overdue' ? overdue : items;
+  const globalSearch = useSelector(selectGlobalSearch);
+  const rawItems = view === 'my' ? myTasks : view === 'overdue' ? overdue : items;
+  const displayItems = globalSearch
+    ? rawItems.filter(t => t.title?.toLowerCase().includes(globalSearch.toLowerCase()))
+    : rawItems;
 
   return (
     <div className="space-y-5">

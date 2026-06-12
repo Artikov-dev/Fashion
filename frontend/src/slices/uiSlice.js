@@ -48,5 +48,6 @@ export const {
 export const selectTheme            = (state) => state.ui.theme;
 export const selectSidebarCollapsed = (state) => state.ui.sidebarCollapsed;
 export const selectModal            = (state) => state.ui.modal;
+export const selectGlobalSearch     = (state) => state.ui.globalSearch;
 
 export default uiSlice.reducer;

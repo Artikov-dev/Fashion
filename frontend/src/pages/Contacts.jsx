@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   fetchContacts, createContact, deleteContact,
 } from '../slices/contactsSlice';
+import { selectGlobalSearch } from '../slices/uiSlice';
 import Badge    from '../components/UI/Badge';
 import Avatar   from '../components/UI/Avatar';
 import Modal    from '../components/UI/Modal';
@@ -23,12 +24,19 @@ export default function Contacts() {
   const { items, meta, loading } = useSelector((s) => s.contacts);
   const role = useSelector((s) => s.auth.user?.role);
 
+  const globalSearch = useSelector(selectGlobalSearch);
+
   const [search,  setSearch]  = useState('');
   const [status,  setStatus]  = useState('');
   const [page,    setPage]    = useState(1);
   const [modal,   setModal]   = useState(false);
   const [form,    setForm]    = useState(EMPTY_FORM);
   const [saving,  setSaving]  = useState(false);
+
+  useEffect(() => {
+    setSearch(globalSearch);
+    setPage(1);
+  }, [globalSearch]);
 
   const load = useCallback(() => {
     dispatch(fetchContacts({ q: search, status, page, per_page: 20 }));

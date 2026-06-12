@@ -9,19 +9,28 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
+import {
+  Zap, Trophy, DollarSign, Percent,
+  TrendingUp, UserPlus, AlertTriangle, Phone, Mail,
+  Handshake, StickyNote, MessageCircle, ClipboardList, Inbox,
+} from 'lucide-react';
 
 const KPI_CONFIG = [
-  { key: 'total_leads',      title: 'Faol leadlar',      icon: '◈', color: '#185FA5' },
-  { key: 'won_deals',        title: 'Yutilgan bitimlar', icon: '★', color: '#1D9E75' },
-  { key: 'revenue',          title: 'Jami daromad',      icon: '₸', color: '#1D9E75', isMoney: true },
-  { key: 'conversion_rate',  title: 'Konversiya',        icon: '◎', color: '#BA7517', suffix: '%' },
-  { key: 'avg_deal_size',    title: "O'rtacha bitim",    icon: '▲', color: '#185FA5', isMoney: true },
-  { key: 'new_contacts_mtd', title: 'Yangi kontaktlar',  icon: '⊕', color: '#8B5CF6' },
-  { key: 'overdue_tasks',    title: "Muddati o'tgan",    icon: '⚠', color: '#E24B4A' },
+  { key: 'total_leads',      title: 'Faol leadlar',      icon: <Zap size={18} strokeWidth={2} />,           color: '#185FA5' },
+  { key: 'won_deals',        title: 'Yutilgan bitimlar', icon: <Trophy size={18} strokeWidth={2} />,        color: '#1D9E75' },
+  { key: 'revenue',          title: 'Jami daromad',      icon: <DollarSign size={18} strokeWidth={2} />,    color: '#1D9E75', isMoney: true },
+  { key: 'conversion_rate',  title: 'Konversiya',        icon: <Percent size={18} strokeWidth={2} />,       color: '#BA7517', suffix: '%' },
+  { key: 'avg_deal_size',    title: "O'rtacha bitim",    icon: <TrendingUp size={18} strokeWidth={2} />,    color: '#185FA5', isMoney: true },
+  { key: 'new_contacts_mtd', title: 'Yangi kontaktlar',  icon: <UserPlus size={18} strokeWidth={2} />,      color: '#8B5CF6' },
+  { key: 'overdue_tasks',    title: "Muddati o'tgan",    icon: <AlertTriangle size={18} strokeWidth={2} />, color: '#E24B4A' },
 ];
 
 const ACTIVITY_ICONS = {
-  call: '📞', email: '✉', meeting: '🤝', note: '📝', whatsapp: '💬',
+  call:     <Phone size={14} strokeWidth={2} />,
+  email:    <Mail size={14} strokeWidth={2} />,
+  meeting:  <Handshake size={14} strokeWidth={2} />,
+  note:     <StickyNote size={14} strokeWidth={2} />,
+  whatsapp: <MessageCircle size={14} strokeWidth={2} />,
 };
 
 function fmt(n) {
@@ -65,7 +74,7 @@ export default function Dashboard() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-          Salom, {user?.name?.split(' ')[0] || 'Foydalanuvchi'} 👋
+          Salom, {user?.name?.split(' ')[0] || 'Foydalanuvchi'}
         </h1>
         <p className="text-sm text-gray-500 dark:text-white/40 mt-0.5">
           {new Date().toLocaleDateString('uz-UZ', {
@@ -265,7 +274,7 @@ export default function Dashboard() {
           {activityFeed.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <p className="text-2xl mb-2">📋</p>
+                <div className="flex justify-center mb-2 text-gray-300 dark:text-white/20"><ClipboardList size={36} strokeWidth={1.5} /></div>
                 <p className="text-sm text-gray-400 dark:text-white/30">Faoliyat yo'q</p>
               </div>
             </div>
@@ -273,8 +282,8 @@ export default function Dashboard() {
             <div className="divide-y divide-gray-50 dark:divide-white/5 max-h-[280px] overflow-y-auto">
               {activityFeed.slice(0, 8).map((act) => (
                 <div key={act.id} className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
-                  <span className="text-base flex-shrink-0 mt-0.5">
-                    {ACTIVITY_ICONS[act.type] || '📋'}
+                  <span className="text-base flex-shrink-0 mt-0.5 text-gray-500 dark:text-white/40">
+                    {ACTIVITY_ICONS[act.type] || <ClipboardList size={14} strokeWidth={2} />}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 dark:text-white/80 truncate">

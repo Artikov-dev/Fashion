@@ -1,3 +1,5 @@
+import { TrendingUp, TrendingDown } from 'lucide-react';
+
 export default function KpiCard({ title, value, sub, icon, color = '#185FA5', trend, loading }) {
   const fmtNum = (v) => {
     if (v === undefined || v === null) return '—';
@@ -25,8 +27,8 @@ export default function KpiCard({ title, value, sub, icon, color = '#185FA5', tr
             <p className="mt-1 text-xs text-gray-400 dark:text-white/30 truncate">{sub}</p>
           )}
           {trend !== undefined && !loading && (
-            <p className={`mt-1 text-xs font-medium ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
+            <p className={`mt-1 text-xs font-medium flex items-center gap-0.5 ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {trend >= 0 ? <TrendingUp size={12} strokeWidth={2.5} /> : <TrendingDown size={12} strokeWidth={2.5} />} {Math.abs(trend)}%
             </p>
           )}
         </div>

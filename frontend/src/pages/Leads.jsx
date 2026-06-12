@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchLeads, fetchStages, deleteLead, updateLeadStatus } from '../slices/leadsSlice';
+import { selectGlobalSearch } from '../slices/uiSlice';
 import Badge    from '../components/UI/Badge';
 import Skeleton from '../components/UI/Skeleton';
 import EmptyState from '../components/UI/EmptyState';
@@ -15,6 +16,7 @@ export default function Leads() {
   const navigate  = useNavigate();
   const { items, meta, stages, loading } = useSelector((s) => s.leads);
   const role = useSelector((s) => s.auth.user?.role);
+  const globalSearch = useSelector(selectGlobalSearch);
 
   const [search,   setSearch]   = useState('');
   const [status,   setStatus]   = useState('open');
@@ -22,9 +24,16 @@ export default function Leads() {
   const [stageId,  setStageId]  = useState('');
   const [page,     setPage]     = useState(1);
 
+  // globalSearch o'zgarganda lokal searchni yangilash
+  useEffect(() => {
+    setSearch(globalSearch);
+    setPage(1);
+  }, [globalSearch]);
+
+  const q = search;
   const load = useCallback(() => {
-    dispatch(fetchLeads({ q: search, status, priority, stage_id: stageId || undefined, page, per_page: 20 }));
-  }, [dispatch, search, status, priority, stageId, page]);
+    dispatch(fetchLeads({ q, status, priority, stage_id: stageId || undefined, page, per_page: 20 }));
+  }, [dispatch, q, status, priority, stageId, page]);
 
   useEffect(() => { load(); dispatch(fetchStages()); }, [load]);
 

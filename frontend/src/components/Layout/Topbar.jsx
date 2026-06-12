@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { logoutUser, selectUser } from '../../slices/authSlice';
 import { toggleTheme, selectTheme, setGlobalSearch } from '../../slices/uiSlice';
 import Avatar from '../UI/Avatar';
 import NotificationBell from '../UI/NotificationBell';
+import { Search, Sun, Moon, Settings, LogOut, ChevronDown } from 'lucide-react';
 
 const ROLE_META = {
   admin:   { label: 'Admin',    color: '#EF4444', bg: 'rgba(239,68,68,0.15)'   },
@@ -13,56 +14,40 @@ const ROLE_META = {
   user:    { label: "Foydalanuvchi", color: '#6366F1', bg: 'rgba(99,102,241,0.15)' },
 };
 
-/* ── SVG icons ─────────────────────────────────────────────── */
-const IcoSearch = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-);
-const IcoSun = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="5"/>
-    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-  </svg>
-);
-const IcoMoon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-  </svg>
-);
-const IcoSettings = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"/>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-  </svg>
-);
-const IcoLogout = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-    <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-  </svg>
-);
-const IcoChevDown = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <path d="M6 9l6 6 6-6"/>
-  </svg>
-);
-
 export default function Topbar() {
   const dispatch    = useDispatch();
   const navigate    = useNavigate();
+  const location    = useLocation();
   const user        = useSelector(selectUser);
   const theme       = useSelector(selectTheme);
+
+  const SEARCH_PLACEHOLDERS = {
+    '/leads':    'Leadlarni qidirish…',
+    '/contacts': 'Kontaktlarni qidirish…',
+    '/tasks':    'Vazifalarni qidirish…',
+  };
+  const searchPlaceholder = SEARCH_PLACEHOLDERS[location.pathname] || 'Qidirish…';
+  const searchEnabled = location.pathname in SEARCH_PLACEHOLDERS;
   const [search,   setSearch]   = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const debounceRef = useRef(null);
 
   const handleSearch = (e) => {
-    setSearch(e.target.value);
-    dispatch(setGlobalSearch(e.target.value));
+    const val = e.target.value;
+    setSearch(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      dispatch(setGlobalSearch(val));
+    }, 350);
   };
+
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  // Sahifa o'zgarganda searchni tozalash
+  useEffect(() => {
+    setSearch('');
+    dispatch(setGlobalSearch(''));
+  }, [location.pathname, dispatch]);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -90,11 +75,12 @@ export default function Topbar() {
           pointerEvents: 'none', color: isDark ? 'rgba(255,255,255,0.3)' : '#9CA3AF',
           display: 'flex',
         }}>
-          <IcoSearch />
+          <Search size={14} strokeWidth={2} />
         </span>
         <input
           type="text" value={search} onChange={handleSearch}
-          placeholder="Qidirish…"
+          placeholder={searchPlaceholder}
+          disabled={!searchEnabled}
           style={{
             width: '100%', paddingLeft: 36, paddingRight: 14, paddingTop: 8, paddingBottom: 8,
             fontSize: 13, borderRadius: 12, outline: 'none',
@@ -103,8 +89,10 @@ export default function Topbar() {
             color: isDark ? 'rgba(255,255,255,0.8)' : '#374151',
             transition: 'border-color .2s, box-shadow .2s',
             boxSizing: 'border-box',
+            opacity: searchEnabled ? 1 : 0.4,
+            cursor: searchEnabled ? 'text' : 'not-allowed',
           }}
-          onFocus={e => { e.target.style.borderColor='#185FA5'; e.target.style.boxShadow='0 0 0 3px rgba(24,95,165,0.15)'; }}
+          onFocus={e => { if (searchEnabled) { e.target.style.borderColor='#185FA5'; e.target.style.boxShadow='0 0 0 3px rgba(24,95,165,0.15)'; } }}
           onBlur={e  => { e.target.style.borderColor=isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)'; e.target.style.boxShadow='none'; }}
         />
       </div>
@@ -128,7 +116,7 @@ export default function Topbar() {
           onMouseEnter={e => { e.currentTarget.style.background=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.05)'; e.currentTarget.style.color=isDark?'#fff':'#374151'; }}
           onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color=isDark?'rgba(255,255,255,0.4)':'#6B7280'; }}
         >
-          {isDark ? <IcoSun /> : <IcoMoon />}
+          {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
         </button>
 
         {/* Divider */}
@@ -159,7 +147,7 @@ export default function Topbar() {
             </div>
 
             {/* Name & role */}
-            <div style={{ textAlign: 'left', display: 'none' }} className="sm:block" style={{ textAlign: 'left' }}>
+            <div className="sm:block" style={{ textAlign: 'left' }}>
               <p style={{
                 fontSize: 12, fontWeight: 700, lineHeight: 1.3, maxWidth: 110,
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -174,7 +162,7 @@ export default function Topbar() {
             </div>
 
             <span style={{ color: isDark ? 'rgba(255,255,255,0.3)' : '#9CA3AF', display: 'flex' }}>
-              <IcoChevDown />
+              <ChevronDown size={12} strokeWidth={2.5} />
             </span>
           </button>
 
@@ -216,7 +204,7 @@ export default function Topbar() {
                 {/* Menu items */}
                 <div style={{ padding: '6px 6px' }}>
                   {[
-                    { icon: <IcoSettings />, label: 'Sozlamalar', onClick: () => { navigate('/settings'); setMenuOpen(false); }, color: isDark ? 'rgba(255,255,255,0.7)' : '#374151' },
+                    { icon: <Settings size={14} strokeWidth={2} />, label: 'Sozlamalar', onClick: () => { navigate('/settings'); setMenuOpen(false); }, color: isDark ? 'rgba(255,255,255,0.7)' : '#374151' },
                   ].map((item, i) => (
                     <button key={i} onClick={item.onClick} style={{
                       width: '100%', display: 'flex', alignItems: 'center', gap: 9,
@@ -244,7 +232,7 @@ export default function Topbar() {
                     onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.1)'}
                     onMouseLeave={e => e.currentTarget.style.background='transparent'}
                   >
-                    <IcoLogout />Chiqish
+                    <LogOut size={14} strokeWidth={2} />Chiqish
                   </button>
                 </div>
               </div>
